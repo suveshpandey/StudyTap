@@ -8,6 +8,7 @@ class UserSignup(BaseModel):
     name: str
     email: EmailStr
     password: str
+    role: Optional[str] = "student"
 
 
 class UserLogin(BaseModel):
@@ -40,6 +41,10 @@ class CourseResponse(BaseModel):
         from_attributes = True
 
 
+class CourseCreate(BaseModel):
+    name: str
+
+
 class SubjectResponse(BaseModel):
     id: int
     course_id: int
@@ -48,6 +53,12 @@ class SubjectResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SubjectCreate(BaseModel):
+    course_id: int
+    name: str
+    semester: Optional[int] = None
 
 
 # Chat schemas

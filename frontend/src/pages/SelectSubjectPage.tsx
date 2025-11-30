@@ -1,173 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { startChat } from '../api/client';
+import { startChat, getCourses, getSubjectsByCourse, type Course, type Subject } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import {
-  Cpu,
-  FlaskConical,
-  Building2,
-  Globe,
   BookOpen,
-  Code2,
-  Database,
-  Server,
-  Network,
-  Radio,
-  Atom,
-  Binary,
-  Wrench,
-  CircuitBoard,
-  Calculator,
-  Beaker,
-  Microscope,
-  Dna,
-  BarChart3,
-  Landmark,
-  TrendingUp,
-  Wallet,
-  ShoppingCart,
-  BookText,
-  Clock,
-  Shield,
+  GraduationCap,
   Sparkles
 } from 'lucide-react';
 
-interface Course {
-  id: number;
-  name: string;
-}
-
-interface Subject {
-  id: number;
-  name: string;
-  semester?: number | null;
-}
-
-// Course icons mapping
-const COURSE_ICONS: Record<number, React.ReactNode> = {
-  1: <Cpu className="w-5 h-5" />, // B.Tech
-  2: <FlaskConical className="w-5 h-5" />, // B.Sc
-  3: <Building2 className="w-5 h-5" />, // B.Com
-  4: <Globe className="w-5 h-5" />, // B.S
-  5: <BookOpen className="w-5 h-5" />, // B.A
-  6: <Code2 className="w-5 h-5" />, // B.E
-};
-
-// Subject icons mapping
-const SUBJECT_ICONS: Record<number, React.ReactNode> = {
-  // B.Tech subjects
-  1: <Database className="w-4 h-4" />, // DBMS
-  2: <Server className="w-4 h-4" />, // Operating Systems
-  3: <Network className="w-4 h-4" />, // Computer Networks
-  4: <Radio className="w-4 h-4" />, // Data Communication
-  5: <Atom className="w-4 h-4" />, // Engineering Physics
-  6: <Binary className="w-4 h-4" />, // Data Structures
-  7: <Wrench className="w-4 h-4" />, // Software Engineering
-  8: <CircuitBoard className="w-4 h-4" />, // Computer Architecture
-
-  // B.Sc subjects
-  9: <Calculator className="w-4 h-4" />, // Mathematics
-  10: <Beaker className="w-4 h-4" />, // Physics
-  11: <FlaskConical className="w-4 h-4" />, // Chemistry
-  12: <Dna className="w-4 h-4" />, // Biology
-  13: <BarChart3 className="w-4 h-4" />, // Statistics
-
-  // B.Com subjects
-  14: <Landmark className="w-4 h-4" />, // Accounting
-  15: <TrendingUp className="w-4 h-4" />, // Business Economics
-  16: <Wallet className="w-4 h-4" />, // Financial Management
-  17: <ShoppingCart className="w-4 h-4" />, // Marketing
-
-  // B.S subjects
-  18: <Calculator className="w-4 h-4" />, // Mathematics
-  19: <Beaker className="w-4 h-4" />, // Physics
-  20: <FlaskConical className="w-4 h-4" />, // Chemistry
-
-  // B.A subjects
-  21: <BookText className="w-4 h-4" />, // English Literature
-  22: <Clock className="w-4 h-4" />, // History
-  23: <Shield className="w-4 h-4" />, // Political Science
-
-  // B.E subjects
-  24: <Database className="w-4 h-4" />, // DBMS
-  25: <Server className="w-4 h-4" />, // Operating Systems
-  26: <Network className="w-4 h-4" />, // Computer Networks
-  27: <Radio className="w-4 h-4" />, // Data Communication
-  28: <Atom className="w-4 h-4" />, // Engineering Physics
-};
-
-// Hardcoded courses
-const COURSES: Course[] = [
-  { id: 1, name: 'B.Tech (Bachelor of Technology)' },
-  { id: 2, name: 'B.Sc (Bachelor of Science)' },
-  { id: 3, name: 'B.Com (Bachelor of Commerce)' },
-  { id: 4, name: 'B.S (Bachelor of Science)' },
-  { id: 5, name: 'B.A (Bachelor of Arts)' },
-  { id: 6, name: 'B.E (Bachelor of Engineering)' },
-];
-
-// Hardcoded subjects mapped to courses
-const SUBJECTS_BY_COURSE: Record<number, Subject[]> = {
-  1: [
-    // B.Tech
-    { id: 1, name: 'Database Management Systems (DBMS)', semester: 4 },
-    { id: 2, name: 'Operating Systems', semester: 5 },
-    { id: 3, name: 'Computer Networks', semester: 6 },
-    { id: 4, name: 'Data Communication', semester: 5 },
-    { id: 5, name: 'Engineering Physics', semester: 1 },
-    { id: 6, name: 'Data Structures and Algorithms', semester: 3 },
-    { id: 7, name: 'Software Engineering', semester: 6 },
-    { id: 8, name: 'Computer Architecture', semester: 4 },
-  ],
-  2: [
-    // B.Sc
-    { id: 9, name: 'Mathematics', semester: 1 },
-    { id: 10, name: 'Physics', semester: 1 },
-    { id: 11, name: 'Chemistry', semester: 1 },
-    { id: 12, name: 'Biology', semester: 2 },
-    { id: 13, name: 'Statistics', semester: 3 },
-  ],
-  3: [
-    // B.Com
-    { id: 14, name: 'Accounting', semester: 1 },
-    { id: 15, name: 'Business Economics', semester: 2 },
-    { id: 16, name: 'Financial Management', semester: 3 },
-    { id: 17, name: 'Marketing', semester: 4 },
-  ],
-  4: [
-    // B.S
-    { id: 18, name: 'Mathematics', semester: 1 },
-    { id: 19, name: 'Physics', semester: 1 },
-    { id: 20, name: 'Chemistry', semester: 1 },
-  ],
-  5: [
-    // B.A
-    { id: 21, name: 'English Literature', semester: 1 },
-    { id: 22, name: 'History', semester: 2 },
-    { id: 23, name: 'Political Science', semester: 3 },
-  ],
-  6: [
-    // B.E
-    { id: 24, name: 'Database Management Systems (DBMS)', semester: 4 },
-    { id: 25, name: 'Operating Systems', semester: 5 },
-    { id: 26, name: 'Computer Networks', semester: 6 },
-    { id: 27, name: 'Data Communication', semester: 5 },
-    { id: 28, name: 'Engineering Physics', semester: 1 },
-  ],
-};
+// Note: Courses and subjects are now fetched from the API
 
 const SelectSubjectPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
   const [greeting, setGreeting] = useState('');
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
 
-  const subjects = selectedCourseId ? SUBJECTS_BY_COURSE[selectedCourseId] || [] : [];
   const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
-  const selectedCourse = COURSES.find((c) => c.id === selectedCourseId);
+  const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
   // Get time-based greeting
   useEffect(() => {
@@ -176,6 +33,45 @@ const SelectSubjectPage = () => {
     else if (hour < 18) setGreeting('Good afternoon');
     else setGreeting('Good evening');
   }, []);
+
+  // Load courses on mount
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        setIsLoadingCourses(true);
+        const data = await getCourses();
+        setCourses(data);
+      } catch (error) {
+        console.error('Failed to load courses:', error);
+      } finally {
+        setIsLoadingCourses(false);
+      }
+    };
+    loadCourses();
+  }, []);
+
+  // Load subjects when course is selected
+  useEffect(() => {
+    if (selectedCourseId) {
+      const loadSubjects = async () => {
+        try {
+          setIsLoadingSubjects(true);
+          setSelectedSubjectId(null); // Reset subject selection
+          const data = await getSubjectsByCourse(selectedCourseId);
+          setSubjects(data);
+        } catch (error) {
+          console.error('Failed to load subjects:', error);
+          setSubjects([]);
+        } finally {
+          setIsLoadingSubjects(false);
+        }
+      };
+      loadSubjects();
+    } else {
+      setSubjects([]);
+      setSelectedSubjectId(null);
+    }
+  }, [selectedCourseId]);
 
   // Show loading while auth is being checked
   if (authLoading) {
@@ -195,10 +91,12 @@ const SelectSubjectPage = () => {
     return null;
   }
 
-  const handleStartChat = async (subjectName: string) => {
+  const handleStartChat = async () => {
+    if (!selectedSubject) return;
+    
     setIsLoading(true);
     try {
-      const chat = await startChat(1, subjectName);
+      const chat = await startChat(selectedSubject.id, selectedSubject.name);
       navigate(`/chat/${chat.id}`);
     } catch (error: any) {
       console.error('Error starting chat:', error);
@@ -251,14 +149,13 @@ const SelectSubjectPage = () => {
 
             <div className="mt-8 flex flex-wrap justify-center gap-4 text-sm">
               <span className="px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-blue-700">
-                Total courses: <span className="font-semibold">{COURSES.length}</span>
+                Total courses: <span className="font-semibold">{courses.length}</span>
               </span>
-              <span className="px-4 py-2 rounded-full bg-gray-50 border border-gray-200 text-gray-700">
-                Subjects mapped:{" "}
-                <span className="font-semibold">
-                  {Object.values(SUBJECTS_BY_COURSE).reduce((acc, arr) => acc + arr.length, 0)}
+              {selectedCourseId && (
+                <span className="px-4 py-2 rounded-full bg-gray-50 border border-gray-200 text-gray-700">
+                  Subjects available: <span className="font-semibold">{subjects.length}</span>
                 </span>
-              </span>
+              )}
               {selectedCourse && selectedSubject && (
                 <span className="px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 font-medium">
                   Selected: {selectedCourse.name.split('(')[0].trim()} · {selectedSubject.name}
@@ -278,8 +175,17 @@ const SelectSubjectPage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {COURSES.map((course) => {
+            {isLoadingCourses ? (
+              <div className="text-center py-12 text-gray-500">
+                Loading courses...
+              </div>
+            ) : courses.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                No courses available. Please contact an administrator.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {courses.map((course) => {
                 const isActive = selectedCourseId === course.id;
                 return (
                   <motion.button
@@ -301,7 +207,7 @@ const SelectSubjectPage = () => {
                     <div className={`p-3 rounded-xl ${
                       isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
                     }`}>
-                      {COURSE_ICONS[course.id]}
+                      <GraduationCap className="w-5 h-5" />
                     </div>
                     <div className="space-y-2 flex-1">
                       <p className="text-lg font-semibold text-gray-900">{course.name}</p>
@@ -319,7 +225,8 @@ const SelectSubjectPage = () => {
                   </motion.button>
                 );
               })}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Subject Selection */}
@@ -333,7 +240,13 @@ const SelectSubjectPage = () => {
               </p>
             </div>
 
-            {selectedCourseId && subjects.length > 0 && (
+            {isLoadingSubjects && selectedCourseId && (
+              <div className="text-center py-12 text-gray-500">
+                Loading subjects...
+              </div>
+            )}
+
+            {selectedCourseId && !isLoadingSubjects && subjects.length > 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -360,7 +273,7 @@ const SelectSubjectPage = () => {
                         <div className={`p-3 rounded-xl ${
                           isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
                         }`}>
-                          {SUBJECT_ICONS[subject.id]}
+                          <BookOpen className="w-4 h-4" />
                         </div>
                         <div className="flex-1">
                           <p className="text-lg font-semibold text-gray-900 mb-3">
@@ -384,7 +297,7 @@ const SelectSubjectPage = () => {
               </motion.div>
             )}
 
-            {selectedCourseId && subjects.length === 0 && (
+            {selectedCourseId && !isLoadingSubjects && subjects.length === 0 && (
               <div className="text-gray-600 text-xl text-center py-12 bg-white/80 rounded-2xl border-2 border-dashed border-gray-300">
                 <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 No subjects available for this course yet. Please contact your admin.
@@ -419,7 +332,7 @@ const SelectSubjectPage = () => {
             <motion.button
               whileHover={!isLoading && selectedSubjectId ? { scale: 1.02 } : {}}
               whileTap={!isLoading && selectedSubjectId ? { scale: 0.98 } : {}}
-              onClick={() => selectedSubject && handleStartChat(selectedSubject.name)}
+              onClick={handleStartChat}
               disabled={!selectedSubjectId || isLoading}
               className="w-full py-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full 
                         hover:from-blue-700 hover:to-blue-800 

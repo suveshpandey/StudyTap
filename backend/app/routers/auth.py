@@ -27,10 +27,17 @@ async def signup(user_data: schemas.UserSignup, db: Session = Depends(get_db)):
     try:
         # Create new user
         hashed_password = get_password_hash(user_data.password)
+        
+        # Validate and normalize role
+        role = user_data.role.lower() if user_data.role else "student"
+        if role not in ("student", "admin"):
+            role = "student"
+        
         new_user = models.User(
             name=user_data.name,
             email=user_data.email,
-            password_hash=hashed_password
+            password_hash=hashed_password,
+            role=role
         )
         db.add(new_user)
         db.commit()

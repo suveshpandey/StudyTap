@@ -82,4 +82,128 @@ export const sendChatMessage = async (
   return response.data;
 };
 
+// Course and Subject types
+export type Course = {
+  id: number;
+  name: string;
+};
+
+export type Subject = {
+  id: number;
+  course_id: number;
+  name: string;
+  semester?: number | null;
+};
+
+// Course and Subject API functions
+export const getCourses = async (): Promise<Course[]> => {
+  const response = await apiClient.get<Course[]>('/courses');
+  return response.data;
+};
+
+export const getSubjects = async (courseId: number): Promise<Subject[]> => {
+  const response = await apiClient.get<Subject[]>(`/courses/subjects?course_id=${courseId}`);
+  return response.data;
+};
+
+// Alias for consistency with user's naming
+export const getSubjectsByCourse = async (courseId: number): Promise<Subject[]> => {
+  return getSubjects(courseId);
+};
+
+// Admin Course Management API functions
+export const adminGetCourses = async (): Promise<Course[]> => {
+  const response = await apiClient.get<Course[]>('/admin/courses');
+  return response.data;
+};
+
+export const adminCreateCourse = async (name: string): Promise<Course> => {
+  const response = await apiClient.post<Course>('/admin/courses', { name });
+  return response.data;
+};
+
+export const adminDeleteCourse = async (courseId: number): Promise<void> => {
+  await apiClient.delete(`/admin/courses/${courseId}`);
+};
+
+// Admin Subject Management API functions
+export const adminGetSubjects = async (courseId?: number): Promise<Subject[]> => {
+  const response = await apiClient.get<Subject[]>('/admin/subjects', {
+    params: courseId ? { course_id: courseId } : {},
+  });
+  return response.data;
+};
+
+export const adminCreateSubject = async (data: {
+  course_id: number;
+  name: string;
+  semester?: number;
+}): Promise<Subject> => {
+  const response = await apiClient.post<Subject>('/admin/subjects', data);
+  return response.data;
+};
+
+export const adminDeleteSubject = async (subjectId: number): Promise<void> => {
+  await apiClient.delete(`/admin/subjects/${subjectId}`);
+};
+
+// Materials types
+export type MaterialDocument = {
+  id: number;
+  subject_id: number;
+  title: string;
+  s3_key: string | null;
+  source_type: string;
+  created_at: string;
+};
+
+export type MaterialChunk = {
+  id: number;
+  document_id: number;
+  page_number: number | null;
+  heading: string | null;
+  keywords: string;
+  text: string;
+  created_at: string;
+};
+
+// Materials API functions
+export const createMaterialDocument = async (
+  subjectId: number,
+  title: string
+): Promise<MaterialDocument> => {
+  const response = await apiClient.post<MaterialDocument>('/materials/documents', {
+    subject_id: subjectId,
+    title,
+  });
+  return response.data;
+};
+
+export const getMaterialDocuments = async (subjectId: number): Promise<MaterialDocument[]> => {
+  const response = await apiClient.get<MaterialDocument[]>(`/materials/documents/${subjectId}`);
+  return response.data;
+};
+
+export const createMaterialChunk = async (
+  documentId: number,
+  pageNumber: number | null,
+  heading: string | null,
+  keywords: string,
+  text: string
+): Promise<MaterialChunk> => {
+  const response = await apiClient.post<MaterialChunk>('/materials/chunks', {
+    document_id: documentId,
+    page_number: pageNumber,
+    heading: heading,
+    keywords: keywords,
+    text: text,
+  });
+  return response.data;
+};
+
+export const getMaterialChunks = async (documentId: number): Promise<MaterialChunk[]> => {
+  const response = await apiClient.get<MaterialChunk[]>(`/materials/chunks/${documentId}`);
+  return response.data;
+};
+
 export default apiClient;

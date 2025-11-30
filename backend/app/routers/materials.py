@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app import models, schemas
-from app.deps import get_current_user
+from app.deps import get_current_user, get_current_admin
 
 router = APIRouter()
 
@@ -11,7 +11,7 @@ router = APIRouter()
 @router.post("/documents", response_model=schemas.MaterialDocumentResponse)
 async def create_document(
     document_data: schemas.MaterialDocumentCreate,
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """
@@ -60,7 +60,7 @@ async def get_documents_by_subject(
 @router.post("/chunks", response_model=schemas.MaterialChunkResponse)
 async def create_chunk(
     chunk_data: schemas.MaterialChunkCreate,
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
     """

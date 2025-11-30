@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from app.database import get_db
 from app import models, schemas
@@ -153,30 +153,29 @@ async def send_message(
     # Get subject name from the database subject
     subject_name = subject.name if subject else "General"
     
-    # Fetch all chunks for this chat's subject
+    # --- RAG: fetch material chunks for this subject from DB ---
+    question_lower = message_data.question.lower()
+    
+    chunks = []
     if subject:
         chunks = (
             db.query(models.MaterialChunk)
             .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
             .filter(models.MaterialDocument.subject_id == subject.id)
+            .options(joinedload(models.MaterialChunk.document))
             .all()
         )
-    else:
-        chunks = []
     
-    # Simple relevance check using keywords column
-    question_lower = message_data.question.lower()
     relevant_chunks = []
-    
     for chunk in chunks:
-        # keywords stored as comma-separated string
+        if not chunk.keywords:
+            continue
         keywords = [k.strip().lower() for k in chunk.keywords.split(",") if k.strip()]
-        if any(kw in question_lower for kw in keywords):
+        if any(kw and kw in question_lower for kw in keywords):
             relevant_chunks.append(chunk)
-            if len(relevant_chunks) >= 3:  # at most 3 chunks
+            if len(relevant_chunks) >= 3:
                 break
     
-    # Build context_text and sources from relevant_chunks
     context_text = ""
     sources = []
     
@@ -193,7 +192,6 @@ async def send_message(
                 "page": chunk.page_number
             })
     
-    # Build system-style prompt for exam-oriented, subject-aware responses
     system_prompt = f"""
 You are a helpful AI tutor for a university student.
 
@@ -209,8 +207,7 @@ Style requirements:
 - Do NOT introduce new definitions, formulas, or examples that are not supported by the context.
 - You may reorganize and simplify the context, but do not add external knowledge.
 """
-
-    # Build the final prompt with context if available
+    
     if context_text:
         full_prompt = f"""{system_prompt}
 
@@ -222,7 +219,6 @@ Student question: {message_data.question}
 
 Now answer using ONLY the information inside <context>."""
     else:
-        # Fallback when we have no retrieved material
         full_prompt = f"""{system_prompt}
 
 No context was found for this question.

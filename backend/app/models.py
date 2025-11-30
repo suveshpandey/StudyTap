@@ -23,7 +23,7 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(150), nullable=False, unique=True, index=True)
     password_hash = Column(String(255), nullable=False)
-    role = Column(String(20), default=UserRole.STUDENT.value, nullable=False)
+    role = Column(String(20), nullable=False, default="student")
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")

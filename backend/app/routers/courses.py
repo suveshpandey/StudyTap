@@ -13,7 +13,11 @@ async def get_courses(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    courses = db.query(models.Course).all()
+    """
+    Get all courses (student-facing read-only endpoint).
+    Returns all courses ordered by name.
+    """
+    courses = db.query(models.Course).order_by(models.Course.name).all()
     return courses
 
 

@@ -6,6 +6,9 @@ import SignupPage from './pages/SignupPage';
 import SelectSubjectPage from './pages/SelectSubjectPage';
 import ChatListPage from './pages/ChatListPage';
 import ChatPage from './pages/ChatPage';
+import AdminMaterialsPage from './pages/AdminMaterialsPage';
+import AdminSubjectsPage from './pages/AdminSubjectsPage';
+import AdminAcademicsPage from './pages/AdminAcademicsPage';
 import Navbar from './components/Navbar';
 import { AnimatePresence } from 'framer-motion';
 
@@ -54,6 +57,30 @@ const AppRoutes = () => {
             element={
               <ProtectedRoute>
                 <ChatPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/materials"
+            element={
+              <ProtectedRoute>
+                <AdminMaterialsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/subjects"
+            element={
+              <ProtectedRoute>
+                <AdminSubjectsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/academics"
+            element={
+              <ProtectedRoute>
+                <AdminAcademicsPage />
               </ProtectedRoute>
             }
           />

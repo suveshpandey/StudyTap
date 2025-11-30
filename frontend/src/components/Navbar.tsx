@@ -12,7 +12,9 @@ import {
   User,
   ChevronDown,
   Home,
-  GraduationCap
+  GraduationCap,
+  Settings,
+  BookOpen
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -78,6 +80,32 @@ const Navbar = () => {
                   <MessageSquare className="w-4 h-4" />
                   My Chats
                 </Link>
+
+                {/* Admin Panel - Only show for admins */}
+                {user?.role === 'admin' && (
+                  <>
+                    <Link
+                      to="/admin/materials"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                                 text-sm font-semibold text-purple-700 bg-purple-50/80
+                                 border border-purple-200/60 hover:bg-purple-100 hover:border-purple-300
+                                 transition-all duration-200 hover:shadow-md"
+                    >
+                      <Settings className="w-4 h-4" />
+                      Materials
+                    </Link>
+                    <Link
+                      to="/admin/academics"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                                 text-sm font-semibold text-purple-700 bg-purple-50/80
+                                 border border-purple-200/60 hover:bg-purple-100 hover:border-purple-300
+                                 transition-all duration-200 hover:shadow-md"
+                    >
+                      <GraduationCap className="w-4 h-4" />
+                      Manage Courses & Subjects
+                    </Link>
+                  </>
+                )}
 
                 {/* Profile - Fixed */}
                 <motion.button
