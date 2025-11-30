@@ -5,7 +5,6 @@ from app.database import get_db
 from app import models, schemas
 from app.deps import get_current_user
 from app.gemini_client import get_gemini_response
-from app.material_snippets import MATERIAL_SNIPPETS
 
 router = APIRouter()
 
@@ -151,53 +150,86 @@ async def send_message(
     # Load the related Subject to get its name
     subject = db.query(models.Subject).filter(models.Subject.id == chat.subject_id).first()
     
-    # Get subject name from the database subject (for MATERIAL_SNIPPETS lookup)
+    # Get subject name from the database subject
     subject_name = subject.name if subject else "General"
     
-    # Build a flat list of all snippets from all subjects
-    all_snippets = []
-    for subject_snips in MATERIAL_SNIPPETS.values():
-        all_snippets.extend(subject_snips)
+    # Fetch all chunks for this chat's subject
+    if subject:
+        chunks = (
+            db.query(models.MaterialChunk)
+            .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
+            .filter(models.MaterialDocument.subject_id == subject.id)
+            .all()
+        )
+    else:
+        chunks = []
     
-    # Simple relevance check: find snippets with matching keywords
+    # Simple relevance check using keywords column
     question_lower = message_data.question.lower()
-    relevant_snippets = []
-    for snippet in all_snippets:
-        if any(keyword.lower() in question_lower for keyword in snippet["keywords"]):
-            relevant_snippets.append(snippet)
-            if len(relevant_snippets) >= 2:  # Take at most 2 snippets
+    relevant_chunks = []
+    
+    for chunk in chunks:
+        # keywords stored as comma-separated string
+        keywords = [k.strip().lower() for k in chunk.keywords.split(",") if k.strip()]
+        if any(kw in question_lower for kw in keywords):
+            relevant_chunks.append(chunk)
+            if len(relevant_chunks) >= 3:  # at most 3 chunks
                 break
     
-    # Build context text from relevant snippets
+    # Build context_text and sources from relevant_chunks
     context_text = ""
     sources = []
-    if relevant_snippets:
+    
+    if relevant_chunks:
         context_text = "Reference material:\n"
-        for snippet in relevant_snippets:
-            context_text += f"Title: {snippet['title']}\n"
-            context_text += f"Page: {snippet['page']}\n"
-            context_text += f"Content: {snippet['text']}\n\n"
+        for chunk in relevant_chunks:
+            doc = chunk.document
+            context_text += f"Title: {doc.title}\n"
+            context_text += f"Page: {chunk.page_number}\n"
+            context_text += f"Content: {chunk.text}\n\n"
             sources.append({
                 "type": "snippet",
-                "title": snippet["title"],
-                "page": snippet["page"]
+                "title": doc.title,
+                "page": chunk.page_number
             })
     
     # Build system-style prompt for exam-oriented, subject-aware responses
-    system_prompt = f"""You are a helpful AI tutor for a university student.
+    system_prompt = f"""
+You are a helpful AI tutor for a university student.
 
 Subject: {subject_name}
 
-Requirements:
-- Answer in a clear, exam-oriented way.
+You must answer ONLY using the reference material provided in the <context> section.
+If the context does not contain enough information to answer properly, say:
+"I don't have enough information in the provided notes to fully answer this. Please refer to your textbook or class notes."
+
+Style requirements:
+- Explain in a clear, exam-oriented way.
 - Structure answers like 5–10 mark exam answers when appropriate.
-- If the question is off-topic from this subject, briefly answer then guide the student back to the subject."""
+- Do NOT introduce new definitions, formulas, or examples that are not supported by the context.
+- You may reorganize and simplify the context, but do not add external knowledge.
+"""
 
     # Build the final prompt with context if available
     if context_text:
-        full_prompt = f"{system_prompt}\n\n{context_text}Student question: {message_data.question}"
+        full_prompt = f"""{system_prompt}
+
+<context>
+{context_text}
+</context>
+
+Student question: {message_data.question}
+
+Now answer using ONLY the information inside <context>."""
     else:
-        full_prompt = f"{system_prompt}\n\nStudent question: {message_data.question}"
+        # Fallback when we have no retrieved material
+        full_prompt = f"""{system_prompt}
+
+No context was found for this question.
+
+Student question: {message_data.question}
+
+Explain briefly, and mention that this answer is based on general knowledge, not on the uploaded study material."""
     
     # Insert user message
     user_message = models.ChatMessage(

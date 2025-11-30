@@ -110,3 +110,42 @@ class ChatMessageReply(BaseModel):
     sources: List[Dict[str, Any]] = []
     chat_title: Optional[str] = None  # Updated chat title if it was auto-titled
 
+
+# Materials schemas
+class MaterialChunkCreate(BaseModel):
+    document_id: int
+    page_number: Optional[int] = None
+    heading: Optional[str] = None
+    keywords: str
+    text: str
+
+
+class MaterialChunkResponse(BaseModel):
+    id: int
+    document_id: int
+    page_number: Optional[int] = None
+    heading: Optional[str] = None
+    keywords: str
+    text: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MaterialDocumentCreate(BaseModel):
+    subject_id: int
+    title: str
+
+
+class MaterialDocumentResponse(BaseModel):
+    id: int
+    subject_id: int
+    title: str
+    s3_key: Optional[str] = None
+    source_type: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
