@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: ChatMessageBubble.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Chat message bubble component for displaying user and bot messages with markdown support
+// -----------------------------------------------------------------------------
+
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';

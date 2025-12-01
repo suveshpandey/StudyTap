@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: auth.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Authentication router for user signup and login endpoints
+# -----------------------------------------------------------------------------
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError

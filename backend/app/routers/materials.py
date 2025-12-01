@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: materials.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Admin router for managing study material documents and chunks
+# -----------------------------------------------------------------------------
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List

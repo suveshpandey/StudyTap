@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: LoginPage.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: User login page with authentication form
+// -----------------------------------------------------------------------------
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -19,7 +26,7 @@ const LoginPage = () => {
     try {
       const response = await apiClient.post('/auth/login', data);
       login(response.data.access_token, response.data.user);
-      navigate('/select-subject');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Login failed. Please try again.');
     } finally {

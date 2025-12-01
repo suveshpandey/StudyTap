@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: main.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Main FastAPI application entry point with CORS configuration and router registration
+# -----------------------------------------------------------------------------
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import auth, courses, chat, materials, admin_academics

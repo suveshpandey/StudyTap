@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: client.ts
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: API client with axios configuration and all API endpoint functions for frontend
+// -----------------------------------------------------------------------------
+
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';

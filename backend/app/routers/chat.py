@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: chat.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Chat router for managing chat sessions, messages, and RAG-based AI responses
+# -----------------------------------------------------------------------------
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from typing import List
@@ -155,6 +162,8 @@ async def send_message(
     
     # --- RAG: fetch material chunks for this subject from DB ---
     question_lower = message_data.question.lower()
+    # Extract words from question for better matching
+    question_words = [w.strip() for w in question_lower.split() if len(w.strip()) > 2]  # Ignore very short words
     
     chunks = []
     if subject:
@@ -167,14 +176,22 @@ async def send_message(
         )
     
     relevant_chunks = []
+    # First, try keyword-based matching
     for chunk in chunks:
-        if not chunk.keywords:
-            continue
-        keywords = [k.strip().lower() for k in chunk.keywords.split(",") if k.strip()]
-        if any(kw and kw in question_lower for kw in keywords):
-            relevant_chunks.append(chunk)
-            if len(relevant_chunks) >= 3:
-                break
+        if chunk.keywords:
+            keywords = [k.strip().lower() for k in chunk.keywords.split(",") if k.strip()]
+            # Check if any keyword appears in question OR any question word appears in keywords
+            keyword_match = any(kw and (kw in question_lower or any(qw in kw for qw in question_words)) for kw in keywords)
+            if keyword_match:
+                relevant_chunks.append(chunk)
+                if len(relevant_chunks) >= 5:  # Increased limit
+                    break
+    
+    # Fallback: if no keyword matches found, use first few chunks (up to 3)
+    # This ensures we always have context if chunks exist for the subject
+    # This includes chunks without keywords or when keyword matching fails
+    if not relevant_chunks and chunks:
+        relevant_chunks = chunks[:3]
     
     context_text = ""
     sources = []
@@ -184,7 +201,10 @@ async def send_message(
         for chunk in relevant_chunks:
             doc = chunk.document
             context_text += f"Title: {doc.title}\n"
-            context_text += f"Page: {chunk.page_number}\n"
+            if chunk.page_number:
+                context_text += f"Page: {chunk.page_number}\n"
+            if chunk.heading:
+                context_text += f"Heading: {chunk.heading}\n"
             context_text += f"Content: {chunk.text}\n\n"
             sources.append({
                 "type": "snippet",

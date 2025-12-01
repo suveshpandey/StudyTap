@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: ProfileModal.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: User profile modal component displaying user information and logout option
+// -----------------------------------------------------------------------------
+
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { 

@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: admin_academics.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Admin router for managing courses and subjects (CRUD operations)
+# -----------------------------------------------------------------------------
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -171,4 +178,5 @@ async def delete_subject(
     db.commit()
     
     return None
+
 

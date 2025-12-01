@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: eslint.config.js
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: ESLint configuration for TypeScript and React code quality checks
+// -----------------------------------------------------------------------------
+
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'

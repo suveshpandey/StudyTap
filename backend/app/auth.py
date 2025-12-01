@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: auth.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: JWT token creation/validation and password hashing utilities
+# -----------------------------------------------------------------------------
+
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt

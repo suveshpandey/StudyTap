@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: AuthForm.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Reusable authentication form component for login and signup
+// -----------------------------------------------------------------------------
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User } from "lucide-react";

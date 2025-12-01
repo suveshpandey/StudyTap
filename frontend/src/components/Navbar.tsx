@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: Navbar.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Main navigation bar component with user menu and admin links
+// -----------------------------------------------------------------------------
+
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -59,7 +66,7 @@ const Navbar = () => {
 
                 {/* Dashboard */}
                 <Link
-                  to="/select-subject"
+                  to="/dashboard"
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl 
                              text-sm font-semibold text-blue-700 bg-blue-50/80 
                              border border-blue-200/60 hover:bg-blue-100 hover:border-blue-300 

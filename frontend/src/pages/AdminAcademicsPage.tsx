@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: AdminAcademicsPage.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Admin page for managing courses and subjects with two-column layout
+// -----------------------------------------------------------------------------
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -435,4 +442,5 @@ const AdminAcademicsPage = () => {
 };
 
 export default AdminAcademicsPage;
+
 

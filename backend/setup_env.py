@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: setup_env.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Helper script to create .env file with proper database, JWT, and Gemini API configuration
+# -----------------------------------------------------------------------------
+
 """
 Helper script to create .env file with proper database configuration.
 This will prompt you for your MySQL credentials and create the .env file.

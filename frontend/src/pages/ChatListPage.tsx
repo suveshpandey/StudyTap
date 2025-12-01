@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: ChatListPage.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Page displaying list of all user's chat sessions
+// -----------------------------------------------------------------------------
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';

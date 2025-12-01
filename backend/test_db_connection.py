@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: test_db_connection.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Simple script to test MySQL database connection and verify DATABASE_URL configuration
+# -----------------------------------------------------------------------------
+
 """
 Simple script to test MySQL database connection.
 Run this to verify your DATABASE_URL is correct before starting the server.

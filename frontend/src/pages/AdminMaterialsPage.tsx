@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: AdminMaterialsPage.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Admin page for managing study material documents and chunks
+// -----------------------------------------------------------------------------
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -559,4 +566,5 @@ const AdminMaterialsPage = () => {
 };
 
 export default AdminMaterialsPage;
+
 

@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: courses.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Student-facing read-only router for courses and subjects
+# -----------------------------------------------------------------------------
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List

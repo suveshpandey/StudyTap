@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: deps.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: FastAPI dependencies for authentication (get_current_user, get_current_admin)
+# -----------------------------------------------------------------------------
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session

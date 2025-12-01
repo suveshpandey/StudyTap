@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: App.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Main React application component with routing configuration and protected routes
+// -----------------------------------------------------------------------------
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import LandingPage from './pages/LandingPage';
@@ -37,7 +44,7 @@ const AppRoutes = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route
-            path="/select-subject"
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <SelectSubjectPage />

@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: database.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Database connection configuration and session management using SQLAlchemy
+# -----------------------------------------------------------------------------
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker

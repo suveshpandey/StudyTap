@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: ChatInput.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Chat input component with textarea and send button for user messages
+// -----------------------------------------------------------------------------
+
 import { useState, useRef, useEffect } from 'react';
 
 interface ChatInputProps {

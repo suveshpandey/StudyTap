@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: models.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: SQLAlchemy database models for User, Course, Subject, Chat, ChatMessage, MaterialDocument, and MaterialChunk
+# -----------------------------------------------------------------------------
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, Enum, TIMESTAMP, SmallInteger, DateTime
 from sqlalchemy.dialects.mysql import JSON
 from sqlalchemy.orm import relationship

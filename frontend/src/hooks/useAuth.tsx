@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: useAuth.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Authentication context and hook for managing user session state
+// -----------------------------------------------------------------------------
+
 import { useState, useEffect, createContext, useContext } from 'react';
 import type { ReactNode } from 'react';
 

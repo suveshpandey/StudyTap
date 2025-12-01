@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: CourseSubjectSelector.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Reusable component for selecting course and subject from dropdowns
+// -----------------------------------------------------------------------------
+
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getCourses, getSubjects, type Course, type Subject } from '../api/client';

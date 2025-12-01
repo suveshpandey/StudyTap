@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: SignupPage.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: User registration page with signup form
+// -----------------------------------------------------------------------------
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';

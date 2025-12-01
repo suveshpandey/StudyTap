@@ -1,6 +1,16 @@
+// -----------------------------------------------------------------------------
+// File: LandingPage.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Landing page component with hero section and feature highlights
+// -----------------------------------------------------------------------------
+
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
+import { 
+  Brain
+} from 'lucide-react';
 
 // --- Reusable SVG Icons ---
 
@@ -66,47 +76,59 @@ const LandingPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 text-gray-800 flex flex-col">
       {/* Navigation */}
-      <nav className="bg-white/90 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <div className={`h-9 w-9 rounded-2xl bg-gradient-to-tr from-${PRIMARY_COLOR}-500 to-indigo-500 flex items-center justify-center shadow-md`}>
-                <span className="text-xs font-extrabold text-white">AI</span>
-              </div>
-              <h1
-                className={`text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-${PRIMARY_COLOR}-600 to-indigo-600 bg-clip-text text-transparent tracking-tight`}
-              >
-                CampusMind AI
-              </h1>
-            </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              {isAuthenticated ? (
-                <Link
-                  to="/select-subject"
-                  className={`py-2.5 px-5 bg-${PRIMARY_COLOR}-600 text-white rounded-full hover:bg-${PRIMARY_COLOR}-700 transition-all duration-300 font-semibold text-sm shadow-md hover:shadow-lg`}
-                >
-                  Go to Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="py-2.5 px-5 text-gray-600 hover:text-gray-900 transition-colors duration-300 font-medium text-sm hidden sm:block"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className={`py-2.5 px-5 bg-${PRIMARY_COLOR}-600 text-white rounded-full hover:bg-${PRIMARY_COLOR}-700 transition-all duration-300 font-semibold text-sm shadow-lg hover:shadow-xl`}
-                  >
-                    Get Started
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
+<nav className="bg-white/90 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex justify-between items-center h-16">
+      
+      {/* Logo with Icon */}
+      <Link 
+        to="/" 
+        className="flex items-center gap-3 group"
+      >
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg group-hover:scale-105 transition-transform duration-200">
+          <Brain className="w-6 h-6 text-white" />
         </div>
-      </nav>
+        <div className="flex flex-col">
+          <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
+            CampusMind AI
+          </span>
+          <span className="text-xs text-gray-500 -mt-1 font-medium hidden sm:block">
+            Smart Learning Companion
+          </span>
+        </div>
+      </Link>
+
+      {/* Auth Buttons */}
+      <div className="flex items-center space-x-2 sm:space-x-4">
+        {isAuthenticated ? (
+          <Link
+            to="/select-subject"
+            className="py-2.5 px-5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 font-semibold text-sm shadow-md hover:shadow-lg"
+          >
+            Go to Dashboard
+          </Link>
+        ) : (
+          <>
+            <Link
+              to="/login"
+              className="py-2.5 px-5 text-gray-600 hover:text-gray-900 transition-colors duration-300 font-medium text-sm hidden sm:block"
+            >
+              Login
+            </Link>
+            <Link
+              to="/signup"
+              className="py-2.5 px-5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 font-semibold text-sm shadow-lg hover:shadow-xl"
+            >
+              Get Started
+            </Link>
+          </>
+        )}
+      </div>
+
+    </div>
+  </div>
+</nav>
+
 
       {/* Hero Section */}
       <div className="relative isolate pt-12 pb-24 sm:pt-20 sm:pb-32 flex-1">

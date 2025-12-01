@@ -1,3 +1,10 @@
+# -----------------------------------------------------------------------------
+# File: schemas.py
+# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+# Created On: 01-12-2025
+# Description: Pydantic schemas for request/response validation for auth, courses, subjects, chat, and materials
+# -----------------------------------------------------------------------------
+
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List, Dict, Any
 from datetime import datetime

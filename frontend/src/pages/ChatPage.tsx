@@ -1,3 +1,10 @@
+// -----------------------------------------------------------------------------
+// File: ChatPage.tsx
+// Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
+// Created On: 01-12-2025
+// Description: Main chat interface page for conversation with AI tutor
+// -----------------------------------------------------------------------------
+
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
