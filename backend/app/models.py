@@ -23,6 +23,22 @@ class SenderType(str, enum.Enum):
     BOT = "BOT"
 
 
+class University(Base):
+    __tablename__ = "universities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False, unique=True)
+    code = Column(String(50), nullable=True, unique=True)  # e.g. short code
+    city = Column(String(100), nullable=True)
+    state = Column(String(100), nullable=True)
+    country = Column(String(100), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+
+    # relationships
+    users = relationship("User", back_populates="university")
+    courses = relationship("Course", back_populates="university", cascade="all, delete-orphan")
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -31,9 +47,11 @@ class User(Base):
     email = Column(String(150), nullable=False, unique=True, index=True)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), nullable=False, default="student")
+    university_id = Column(Integer, ForeignKey("universities.id"), nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")
+    university = relationship("University", back_populates="users")
 
 
 class Course(Base):
@@ -41,8 +59,10 @@ class Course(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(150), nullable=False)
+    university_id = Column(Integer, ForeignKey("universities.id"), nullable=True)
 
     subjects = relationship("Subject", back_populates="course", cascade="all, delete-orphan")
+    university = relationship("University", back_populates="courses")
 
 
 class Subject(Base):

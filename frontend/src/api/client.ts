@@ -89,6 +89,12 @@ export const sendChatMessage = async (
   return response.data;
 };
 
+// Public API functions (no auth required)
+export const getUniversities = async (): Promise<University[]> => {
+  const response = await apiClient.get<University[]>('/courses/universities');
+  return response.data;
+};
+
 // Course and Subject types
 export type Course = {
   id: number;
@@ -174,6 +180,17 @@ export type MaterialChunk = {
   created_at: string;
 };
 
+// University types
+export type University = {
+  id: number;
+  name: string;
+  code?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  created_at: string;
+};
+
 // Materials API functions
 export const createMaterialDocument = async (
   subjectId: number,
@@ -211,6 +228,36 @@ export const createMaterialChunk = async (
 export const getMaterialChunks = async (documentId: number): Promise<MaterialChunk[]> => {
   const response = await apiClient.get<MaterialChunk[]>(`/materials/chunks/${documentId}`);
   return response.data;
+};
+
+// Master Admin University Management API functions
+export const masterGetUniversities = async (): Promise<University[]> => {
+  const res = await apiClient.get<University[]>("/master/universities");
+  return res.data;
+};
+
+export const masterCreateUniversity = async (data: {
+  name: string;
+  code?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}): Promise<University> => {
+  const res = await apiClient.post<University>("/master/universities", data);
+  return res.data;
+};
+
+export const masterDeleteUniversity = async (id: number): Promise<void> => {
+  await apiClient.delete(`/master/universities/${id}`);
+};
+
+export const masterAssignAdmin = async (
+  universityId: number,
+  userId: number
+): Promise<void> => {
+  await apiClient.post(`/master/universities/${universityId}/assign-admin`, null, {
+    params: { user_id: userId },
+  });
 };
 
 export default apiClient;

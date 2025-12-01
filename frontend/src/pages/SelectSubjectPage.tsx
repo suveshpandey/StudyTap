@@ -33,6 +33,17 @@ const SelectSubjectPage = () => {
   const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
+  // Redirect university_admin and master_admin away from student dashboard
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.role === 'university_admin') {
+        navigate('/admin/academics');
+      } else if (user.role === 'master_admin') {
+        navigate('/master/universities');
+      }
+    }
+  }, [user, authLoading, navigate]);
+
   // Get time-based greeting
   useEffect(() => {
     const hour = new Date().getHours();

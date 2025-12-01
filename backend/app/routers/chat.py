@@ -23,46 +23,51 @@ async def start_chat(
     db: Session = Depends(get_db)
 ):
     """
-    Start a new chat session.
+    Start a new chat session (students only).
     Creates a Chat row for the current user with the given subject_id.
-    If title is not provided, sets it to "New chat".
+    Validates that subject belongs to user's university.
     """
-    # For hardcoded subjects: ensure we have a default course and subject for foreign key constraints
-    # Get or create default course
-    default_course = db.query(models.Course).first()
-    if not default_course:
-        default_course = models.Course(name="Default Course")
-        db.add(default_course)
-        db.commit()
-        db.refresh(default_course)
-    
-    # Get or create a default subject (we'll use the first one or create one)
-    default_subject = db.query(models.Subject).first()
-    if not default_subject:
-        default_subject = models.Subject(
-            course_id=default_course.id,
-            name="General"  # Default name, actual subject name is in chat.title
+    # Only students can use chat
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can use the chat.",
         )
-        db.add(default_subject)
-        db.commit()
-        db.refresh(default_subject)
     
-    # Use the provided subject_id or default
-    subject_id = chat_data.subject_id if chat_data.subject_id else default_subject.id
+    # Validate subject_id is provided
+    if not chat_data.subject_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="subject_id is required"
+        )
+    
+    # Validate that the subject exists and belongs to user's university
+    subject = (
+        db.query(models.Subject)
+        .join(models.Course, models.Subject.course_id == models.Course.id)
+        .filter(
+            models.Subject.id == chat_data.subject_id,
+            models.Course.university_id == current_user.university_id
+        )
+        .first()
+    )
+    
+    if not subject:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Subject not found or does not belong to your university"
+        )
 
     # Always start with a generic title; first user question will override it
     new_chat = models.Chat(
         user_id=current_user.id,
-        subject_id=subject_id,
+        subject_id=chat_data.subject_id,
         title="New chat"
     )
 
     db.add(new_chat)
     db.commit()
     db.refresh(new_chat)
-    
-    # Get the subject to include subject_name in response
-    subject = db.query(models.Subject).filter(models.Subject.id == subject_id).first()
     
     return schemas.ChatOut(
         id=new_chat.id,
@@ -78,9 +83,15 @@ async def get_chats(
     db: Session = Depends(get_db)
 ):
     """
-    Get all chats for the current user, ordered by created_at DESC.
+    Get all chats for the current user, ordered by created_at DESC (students only).
     Returns chat title (first user message) and subject name.
     """
+    # Only students can use chat
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can use the chat.",
+        )
     q = (
         db.query(models.Chat, models.Subject)
         .join(models.Subject, models.Chat.subject_id == models.Subject.id)
@@ -108,9 +119,15 @@ async def get_chat_messages(
     db: Session = Depends(get_db)
 ):
     """
-    Get all messages for a chat, ordered by created_at ASC.
-    Returns 403 if chat does not belong to current user.
+    Get all messages for a chat, ordered by created_at ASC (students only).
+    Returns 403 if chat does not belong to current user or user is not a student.
     """
+    # Only students can use chat
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can use the chat.",
+        )
     # Verify chat belongs to user
     chat = db.query(models.Chat).filter(
         models.Chat.id == chat_id,
@@ -138,10 +155,17 @@ async def send_message(
     db: Session = Depends(get_db)
 ):
     """
-    Send a message in a chat and get Gemini's reply.
+    Send a message in a chat and get Gemini's reply (students only).
     Saves both user message and bot response to the database.
-    Returns 403 if chat does not belong to current user.
+    Returns 403 if chat does not belong to current user or user is not a student.
     """
+    # Only students can use chat
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can use the chat.",
+        )
+    
     # Load the Chat and verify it belongs to current_user
     chat = db.query(models.Chat).filter(
         models.Chat.id == chat_id,
@@ -154,8 +178,24 @@ async def send_message(
             detail="Chat not found or access denied"
         )
     
-    # Load the related Subject to get its name
-    subject = db.query(models.Subject).filter(models.Subject.id == chat.subject_id).first()
+    # Load the related Subject and Course to verify university access
+    subject = (
+        db.query(models.Subject)
+        .join(models.Course, models.Subject.course_id == models.Course.id)
+        .filter(models.Subject.id == chat.subject_id)
+        .first()
+    )
+    
+    # Ensure subject belongs to user's university
+    if (
+        subject is None
+        or subject.course is None
+        or subject.course.university_id != current_user.university_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to access this chat/subject.",
+        )
     
     # Get subject name from the database subject
     subject_name = subject.name if subject else "General"

@@ -15,7 +15,9 @@ class UserSignup(BaseModel):
     name: str
     email: EmailStr
     password: str
+    # role will be ignored for now; public signup is always student
     role: Optional[str] = "student"
+    university_id: int  # Required for students
 
 
 class UserLogin(BaseModel):
@@ -28,6 +30,28 @@ class UserResponse(BaseModel):
     name: str
     email: str
     role: str
+    university_id: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UniversityCreate(BaseModel):
+    name: str
+    code: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+
+
+class UniversityResponse(BaseModel):
+    id: int
+    name: str
+    code: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -43,6 +67,7 @@ class TokenResponse(BaseModel):
 class CourseResponse(BaseModel):
     id: int
     name: str
+    university_id: Optional[int] = None
 
     class Config:
         from_attributes = True

@@ -7,7 +7,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, courses, chat, materials, admin_academics
+from app.routers import auth, courses, chat, materials, admin_academics, master_universities
 from app.database import engine
 from app import models
 
@@ -34,6 +34,11 @@ app.include_router(courses.router, prefix="/courses", tags=["courses"])
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
 app.include_router(materials.router, prefix="/materials", tags=["materials"])
 app.include_router(admin_academics.router, prefix="/admin", tags=["admin-academics"])
+app.include_router(
+    master_universities.router,
+    prefix="/master",
+    tags=["master-universities"],
+)
 
 
 @app.get("/")

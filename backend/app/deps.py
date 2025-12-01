@@ -63,3 +63,23 @@ def get_current_admin(current_user: models.User = Depends(get_current_user)) -> 
             detail="Admin access required",
         )
     return current_user
+
+
+def get_current_master_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
+    """Dependency to ensure the current user is a master admin."""
+    if current_user.role != "master_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Master admin access required",
+        )
+    return current_user
+
+
+def get_current_university_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
+    """Dependency to ensure the current user is a university admin."""
+    if current_user.role != "university_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="University admin access required",
+        )
+    return current_user

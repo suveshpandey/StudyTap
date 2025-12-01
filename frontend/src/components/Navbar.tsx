@@ -21,7 +21,8 @@ import {
   Home,
   GraduationCap,
   Settings,
-  BookOpen
+  BookOpen,
+  Building2
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -63,33 +64,50 @@ const Navbar = () => {
             {/* Right side */}
             {isAuthenticated && user ? (
               <div className="flex items-center gap-2">
+                {/* Master Admin - Universities */}
+                {user?.role === 'master_admin' && (
+                  <Link
+                    to="/master/universities"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                               text-sm font-semibold text-blue-700 bg-blue-50/80
+                               border border-blue-200/60 hover:bg-blue-100 hover:border-blue-300
+                               transition-all duration-200 hover:shadow-md"
+                  >
+                    <Building2 className="w-4 h-4" />
+                    Universities
+                  </Link>
+                )}
 
-                {/* Dashboard */}
-                <Link
-                  to="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl 
-                             text-sm font-semibold text-blue-700 bg-blue-50/80 
-                             border border-blue-200/60 hover:bg-blue-100 hover:border-blue-300 
-                             transition-all duration-200 hover:shadow-md"
-                >
-                  <GraduationCap className="w-4 h-4" />
-                  Dashboard
-                </Link>
+                {/* Dashboard - Only show for students */}
+                {user?.role === 'student' && (
+                  <Link
+                    to="/dashboard"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl 
+                               text-sm font-semibold text-blue-700 bg-blue-50/80 
+                               border border-blue-200/60 hover:bg-blue-100 hover:border-blue-300 
+                               transition-all duration-200 hover:shadow-md"
+                  >
+                    <GraduationCap className="w-4 h-4" />
+                    Dashboard
+                  </Link>
+                )}
 
-                {/* My Chats */}
-                <Link
-                  to="/chats"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl
-                             text-sm font-semibold text-gray-700 bg-white
-                             border border-gray-200 hover:bg-gray-50 hover:border-gray-300
-                             transition-all duration-200 hover:shadow-md"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  My Chats
-                </Link>
+                {/* My Chats - Only show for students */}
+                {user?.role === 'student' && (
+                  <Link
+                    to="/chats"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+                               text-sm font-semibold text-gray-700 bg-white
+                               border border-gray-200 hover:bg-gray-50 hover:border-gray-300
+                               transition-all duration-200 hover:shadow-md"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    My Chats
+                  </Link>
+                )}
 
-                {/* Admin Panel - Only show for admins */}
-                {user?.role === 'admin' && (
+                {/* Admin Panel - Only show for university_admin (not master_admin) */}
+                {user?.role === 'university_admin' && (
                   <>
                     <Link
                       to="/admin/materials"

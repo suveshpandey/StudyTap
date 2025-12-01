@@ -62,8 +62,15 @@ const AdminMaterialsPage = () => {
         navigate('/login');
         return;
       }
-      if (user?.role !== 'admin') {
-        navigate('/chats');
+      if (user?.role !== 'university_admin') {
+        // Redirect based on role
+        if (user?.role === 'master_admin') {
+          navigate('/master/universities');
+        } else if (user?.role === 'student') {
+          navigate('/dashboard');
+        } else {
+          navigate('/');
+        }
         return;
       }
     }
@@ -71,7 +78,7 @@ const AdminMaterialsPage = () => {
 
   // Load courses on mount
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === 'university_admin') {
       loadCourses();
     }
   }, [user]);
@@ -233,7 +240,7 @@ const AdminMaterialsPage = () => {
     );
   }
 
-  if (!isAuthenticated || user?.role !== 'admin') {
+  if (!isAuthenticated || user?.role !== 'university_admin') {
     return null;
   }
 

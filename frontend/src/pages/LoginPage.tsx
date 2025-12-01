@@ -26,7 +26,15 @@ const LoginPage = () => {
     try {
       const response = await apiClient.post('/auth/login', data);
       login(response.data.access_token, response.data.user);
-      navigate('/dashboard');
+      
+      // Redirect based on role
+      if (response.data.user.role === 'master_admin') {
+        navigate('/master/universities');
+      } else if (response.data.user.role === 'university_admin') {
+        navigate('/admin/academics');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Login failed. Please try again.');
     } finally {

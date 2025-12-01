@@ -30,7 +30,8 @@ import {
 const ChatPage = () => {
   const { chatId } = useParams<{ chatId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,11 +54,22 @@ const ChatPage = () => {
   }
 
   // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login');
+  if (!isAuthenticated) {
+    navigate('/login');
+    return null;
+  }
+
+  // Redirect non-students away from chat
+  if (user && user.role !== 'student') {
+    if (user.role === 'university_admin') {
+      navigate('/admin/academics');
+    } else if (user.role === 'master_admin') {
+      navigate('/master/universities');
+    } else {
+      navigate('/');
     }
-  }, [isAuthenticated, authLoading, navigate]);
+    return null;
+  }
 
   const loadChats = async () => {
     setIsLoadingChats(true);

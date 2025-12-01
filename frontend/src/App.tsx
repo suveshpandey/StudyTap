@@ -16,6 +16,7 @@ import ChatPage from './pages/ChatPage';
 import AdminMaterialsPage from './pages/AdminMaterialsPage';
 import AdminSubjectsPage from './pages/AdminSubjectsPage';
 import AdminAcademicsPage from './pages/AdminAcademicsPage';
+import MasterUniversitiesPage from './pages/MasterUniversitiesPage';
 import Navbar from './components/Navbar';
 import { AnimatePresence } from 'framer-motion';
 
@@ -88,6 +89,14 @@ const AppRoutes = () => {
             element={
               <ProtectedRoute>
                 <AdminAcademicsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/master/universities"
+            element={
+              <ProtectedRoute>
+                <MasterUniversitiesPage />
               </ProtectedRoute>
             }
           />

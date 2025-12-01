@@ -5,19 +5,40 @@
 // Description: User registration page with signup form
 // -----------------------------------------------------------------------------
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import AuthForm from '../components/AuthForm';
 import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
+import { getUniversities, type University } from '../api/client';
+import { Loader2 } from 'lucide-react';
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [universities, setUniversities] = useState<University[]>([]);
+  const [isLoadingUniversities, setIsLoadingUniversities] = useState(true);
+  const [selectedUniversityId, setSelectedUniversityId] = useState<number | null>(null);
   const PRIMARY_COLOR = 'blue';
+
+  // Load universities on mount
+  useEffect(() => {
+    const loadUniversities = async () => {
+      try {
+        setIsLoadingUniversities(true);
+        const data = await getUniversities();
+        setUniversities(data);
+      } catch (err: any) {
+        setError('Failed to load universities. Please refresh the page.');
+      } finally {
+        setIsLoadingUniversities(false);
+      }
+    };
+    loadUniversities();
+  }, []);
 
   const handleSubmit = async (data: { name?: string; email: string; password: string }) => {
     setIsLoading(true);
@@ -29,14 +50,21 @@ const SignupPage = () => {
       return;
     }
 
+    if (!selectedUniversityId) {
+      setError('Please select a university');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await apiClient.post('/auth/signup', {
         name: data.name,
         email: data.email,
         password: data.password,
+        university_id: selectedUniversityId,
       });
       login(response.data.access_token, response.data.user);
-      navigate('/select-subject');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Signup failed. Please try again.');
     } finally {
@@ -85,6 +113,40 @@ const SignupPage = () => {
               {error}
             </motion.div>
           )}
+
+          {/* University Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              University <span className="text-red-500">*</span>
+            </label>
+            {isLoadingUniversities ? (
+              <div className="flex items-center gap-2 text-gray-500 py-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Loading universities...</span>
+              </div>
+            ) : (
+              <select
+                required
+                value={selectedUniversityId || ''}
+                onChange={(e) => setSelectedUniversityId(parseInt(e.target.value) || null)}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              >
+                <option value="">Select your university</option>
+                {universities.map((uni) => (
+                  <option key={uni.id} value={uni.id}>
+                    {uni.name}
+                    {uni.code && ` (${uni.code})`}
+                    {uni.city && ` - ${uni.city}`}
+                  </option>
+                ))}
+              </select>
+            )}
+            {universities.length === 0 && !isLoadingUniversities && (
+              <p className="mt-2 text-sm text-gray-500">
+                No universities available. Please contact your administrator.
+              </p>
+            )}
+          </div>
 
           <AuthForm isLogin={false} onSubmit={handleSubmit} isLoading={isLoading} />
 

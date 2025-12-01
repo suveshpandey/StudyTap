@@ -14,7 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 
 const ChatListPage = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [chats, setChats] = useState<Chat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const PRIMARY_COLOR = 'blue';
@@ -34,11 +34,23 @@ const ChatListPage = () => {
     return null;
   }
 
+  // Redirect non-students away from chat
+  if (user && user.role !== 'student') {
+    if (user.role === 'university_admin') {
+      navigate('/admin/academics');
+    } else if (user.role === 'master_admin') {
+      navigate('/master/universities');
+    } else {
+      navigate('/');
+    }
+    return null;
+  }
+
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user?.role === 'student') {
       loadChats();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const loadChats = async () => {
     setIsLoading(true);

@@ -32,19 +32,28 @@ async def signup(user_data: schemas.UserSignup, db: Session = Depends(get_db)):
         )
     
     try:
+        # Validate that university exists (university_id is now required)
+        university = db.query(models.University).filter(
+            models.University.id == user_data.university_id
+        ).first()
+        if not university:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid university selected"
+            )
+        
         # Create new user
         hashed_password = get_password_hash(user_data.password)
         
-        # Validate and normalize role
-        role = user_data.role.lower() if user_data.role else "student"
-        if role not in ("student", "admin"):
-            role = "student"
+        # Public signup should ALWAYS create a "student" user, regardless of provided role
+        role = "student"  # force
         
         new_user = models.User(
             name=user_data.name,
             email=user_data.email,
             password_hash=hashed_password,
-            role=role
+            role=role,
+            university_id=user_data.university_id,
         )
         db.add(new_user)
         db.commit()
@@ -60,7 +69,8 @@ async def signup(user_data: schemas.UserSignup, db: Session = Depends(get_db)):
                 id=new_user.id,
                 name=new_user.name,
                 email=new_user.email,
-                role=new_user.role
+                role=new_user.role,
+                university_id=new_user.university_id
             )
         }
     except OperationalError as e:
@@ -99,7 +109,8 @@ async def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
                 id=user.id,
                 name=user.name,
                 email=user.email,
-                role=user.role
+                role=user.role,
+                university_id=user.university_id
             )
         }
     except OperationalError as e:
