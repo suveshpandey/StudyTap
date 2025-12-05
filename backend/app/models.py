@@ -5,7 +5,7 @@
 # Description: SQLAlchemy database models for User, Course, Subject, Chat, ChatMessage, MaterialDocument, and MaterialChunk
 # -----------------------------------------------------------------------------
 
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, Enum, TIMESTAMP, SmallInteger, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, Enum, TIMESTAMP, SmallInteger, DateTime, Boolean
 from sqlalchemy.dialects.mysql import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -32,11 +32,14 @@ class University(Base):
     city = Column(String(100), nullable=True)
     state = Column(String(100), nullable=True)
     country = Column(String(100), nullable=True)
+    is_active = Column(Boolean, nullable=False, server_default="1")
     created_at = Column(DateTime, server_default=func.now())
 
     # relationships
     users = relationship("User", back_populates="university")
-    courses = relationship("Course", back_populates="university", cascade="all, delete-orphan")
+    branches = relationship("Branch", back_populates="university", cascade="all, delete-orphan")
+    university_admins = relationship("UniversityAdmin", back_populates="university")
+    students = relationship("Student", back_populates="university")
 
 
 class User(Base):
@@ -52,28 +55,42 @@ class User(Base):
 
     chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")
     university = relationship("University", back_populates="users")
+    master_admin_profile = relationship("MasterAdmin", uselist=False, back_populates="user")
+    university_admin_profile = relationship("UniversityAdmin", uselist=False, back_populates="user")
+    student_profile = relationship("Student", uselist=False, back_populates="user")
 
 
-class Course(Base):
-    __tablename__ = "courses"
+class Branch(Base):
+    __tablename__ = "branches"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(150), nullable=False)
-    university_id = Column(Integer, ForeignKey("universities.id"), nullable=True)
+    university_id = Column(Integer, ForeignKey("universities.id"), nullable=False)
 
-    subjects = relationship("Subject", back_populates="course", cascade="all, delete-orphan")
-    university = relationship("University", back_populates="courses")
+    university = relationship("University", back_populates="branches")
+    semesters = relationship("Semester", back_populates="branch", cascade="all, delete-orphan")
+
+
+class Semester(Base):
+    __tablename__ = "semesters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    branch_id = Column(Integer, ForeignKey("branches.id"), nullable=False)
+    semester_number = Column(SmallInteger, nullable=False)  # 1, 2, 3, etc.
+    name = Column(String(150), nullable=False)  # e.g., "1st Semester", "2nd Semester"
+
+    branch = relationship("Branch", back_populates="semesters")
+    subjects = relationship("Subject", back_populates="semester", cascade="all, delete-orphan")
 
 
 class Subject(Base):
     __tablename__ = "subjects"
 
     id = Column(Integer, primary_key=True, index=True)
-    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False)
+    semester_id = Column(Integer, ForeignKey("semesters.id"), nullable=False)
     name = Column(String(150), nullable=False)
-    semester = Column(SmallInteger, nullable=True)
 
-    course = relationship("Course", back_populates="subjects")
+    semester = relationship("Semester", back_populates="subjects")
     chats = relationship("Chat", back_populates="subject", cascade="all, delete-orphan")
     materials = relationship(
         "MaterialDocument",
@@ -143,4 +160,50 @@ class MaterialChunk(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     document = relationship("MaterialDocument", back_populates="chunks")
+
+
+class MasterAdmin(Base):
+    __tablename__ = "master_admins"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(150), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True)  # Optional, for backward compatibility
+    is_active = Column(Boolean, nullable=False, server_default="1")
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User", back_populates="master_admin_profile")
+
+
+class UniversityAdmin(Base):
+    __tablename__ = "university_admins"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(150), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True)  # Optional, for backward compatibility
+    university_id = Column(Integer, ForeignKey("universities.id"), nullable=False)
+    is_active = Column(Boolean, nullable=False, server_default="1")
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User", back_populates="university_admin_profile")
+    university = relationship("University", back_populates="university_admins")
+
+
+class Student(Base):
+    __tablename__ = "students"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(150), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True)  # Optional, for backward compatibility
+    university_id = Column(Integer, ForeignKey("universities.id"), nullable=False)
+    is_active = Column(Boolean, nullable=False, server_default="1")
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User", back_populates="student_profile")
+    university = relationship("University", back_populates="students")
 

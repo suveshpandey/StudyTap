@@ -1,10 +1,3 @@
-# -----------------------------------------------------------------------------
-# File: seed.py
-# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
-# Created On: 01-12-2025
-# Description: Database seeding script to populate initial courses and subjects
-# -----------------------------------------------------------------------------
-
 """
 Database seeding script to populate initial courses and subjects.
 Run this after the database is created.

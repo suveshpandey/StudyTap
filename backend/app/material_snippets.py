@@ -1,10 +1,3 @@
-# -----------------------------------------------------------------------------
-# File: material_snippets.py
-# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
-# Created On: 01-12-2025
-# Description: Legacy hardcoded material snippets for subjects (deprecated, use database materials instead)
-# -----------------------------------------------------------------------------
-
 """
 Material snippets (notes) for different subjects.
 Used to provide context to Gemini when answering student questions.

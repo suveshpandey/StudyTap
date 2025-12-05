@@ -1,10 +1,3 @@
-# -----------------------------------------------------------------------------
-# File: gemini_client.py
-# Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
-# Created On: 01-12-2025
-# Description: Client for interacting with Google Gemini API for generating AI responses
-# -----------------------------------------------------------------------------
-
 import os
 import httpx
 from dotenv import load_dotenv

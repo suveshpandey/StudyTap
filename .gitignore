@@ -1,0 +1,59 @@
+# Root level gitignore for the entire project
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+env/
+ENV/
+
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build outputs
+build/
+out/
+.next/
+
+# Testing
+coverage/
+.pytest_cache/
+.nyc_output/
+
+# Misc
+.cache/
+.parcel-cache/
+.eslintcache
+*.tsbuildinfo
+

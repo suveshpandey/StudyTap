@@ -32,16 +32,6 @@ async def signup(user_data: schemas.UserSignup, db: Session = Depends(get_db)):
         )
     
     try:
-        # Validate that university exists (university_id is now required)
-        university = db.query(models.University).filter(
-            models.University.id == user_data.university_id
-        ).first()
-        if not university:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid university selected"
-            )
-        
         # Create new user
         hashed_password = get_password_hash(user_data.password)
         
@@ -53,7 +43,7 @@ async def signup(user_data: schemas.UserSignup, db: Session = Depends(get_db)):
             email=user_data.email,
             password_hash=hashed_password,
             role=role,
-            university_id=user_data.university_id,
+            university_id=user_data.university_id,  # can be None for now
         )
         db.add(new_user)
         db.commit()
