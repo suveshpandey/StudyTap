@@ -41,8 +41,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
 def test_connection():
     """
     Test database connection. Useful for debugging.
@@ -56,3 +54,5 @@ def test_connection():
         print(f"Database connection failed: {e}")
         print(f"Current DATABASE_URL: {DATABASE_URL.split('@')[0]}@...")  # Don't print full password
         return False
+
+

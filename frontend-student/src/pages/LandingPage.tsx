@@ -9,7 +9,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { 
-  Brain,
   LogIn
 } from 'lucide-react';
 
@@ -76,70 +75,6 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 text-gray-800 flex flex-col">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/80 shadow-sm">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            
-            {/* Logo with Icon */}
-            <Link 
-              to="/" 
-              className="flex items-center gap-3 group cursor-pointer"
-            >
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent tracking-tight">
-                  CampusMind AI
-                </span>
-                <span className="text-xs text-gray-500 -mt-1 font-medium">
-                  Smart Learning Companion
-                </span>
-              </div>
-            </Link>
-
-            {/* Auth Buttons */}
-            <div className="flex items-center gap-3">
-              {isAuthenticated ? (
-                <Link
-                  to="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer
-                             text-sm font-semibold text-blue-700 bg-blue-50/80 
-                             border border-blue-200/60 hover:bg-blue-100 hover:border-blue-300 
-                             transition-all duration-200 hover:shadow-md"
-                >
-                  Go to Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer
-                               text-sm font-semibold text-gray-700 bg-white
-                               border border-gray-200 hover:bg-gray-50 hover:border-gray-300
-                               transition-all duration-200 hover:shadow-md"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    Login
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer
-                               text-sm font-semibold text-blue-700 bg-blue-50/80
-                               border border-blue-200/60 hover:bg-blue-100 hover:border-blue-300
-                               transition-all duration-200 hover:shadow-md"
-                  >
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
-
-          </div>
-        </div>
-      </nav>
-
 
       {/* Hero Section */}
       <div className="relative isolate pt-12 pb-24 sm:pt-20 sm:pb-32 flex-1">
@@ -191,25 +126,16 @@ const LandingPage = () => {
               </p>
 
               {!isAuthenticated && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+                <div className="mb-6">
                   <Link
                     to="/login"
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer
-                               text-sm font-semibold text-gray-700 bg-white
-                               border border-gray-200 hover:bg-gray-50 hover:border-gray-300
-                               transition-all duration-200 hover:shadow-md"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl cursor-pointer
+                               text-base font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600
+                               hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl
+                               transition-all duration-200 transform hover:scale-105"
                   >
-                    <LogIn className="w-4 h-4" />
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl cursor-pointer
-                               text-sm font-semibold text-blue-700 bg-blue-50/80
-                               border border-blue-200/60 hover:bg-blue-100 hover:border-blue-300
-                               transition-all duration-200 hover:shadow-md"
-                  >
-                    Sign Up
+                    <LogIn className="w-5 h-5" />
+                    Sign In to Get Started
                   </Link>
                 </div>
               )}

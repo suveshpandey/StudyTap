@@ -10,11 +10,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { getStudentProfile, changeStudentPassword } from '../api/client';
-import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, LogOut } from 'lucide-react';
 
 const StudentProfilePage = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   const [profileLoading, setProfileLoading] = useState(true);
   const [changingPassword, setChangingPassword] = useState(false);
   const [error, setError] = useState('');
@@ -117,10 +117,27 @@ const StudentProfilePage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-8"
+          className="mb-8 flex items-start justify-between"
         >
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">My Profile</h1>
-          <p className="text-gray-600">Manage your profile information and password</p>
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-2">My Profile</h1>
+            <p className="text-gray-600">Manage your profile information and password</p>
+          </div>
+          <button
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
+            className="group flex items-center justify-center gap-2 px-5 py-2.5 
+                      text-gray-600 bg-white border border-gray-200 
+                      rounded-xl hover:border-rose-300 hover:bg-rose-50
+                      hover:text-rose-600 transition-all duration-200 
+                      text-sm font-medium shadow-xs hover:shadow-sm cursor-pointer"
+          >
+            <LogOut className="w-4 h-4 transition-transform duration-200 
+                              group-hover:translate-x-0.5" />
+            <span className="transition-all duration-200">Logout</span>
+          </button>
         </motion.div>
 
         {error && (

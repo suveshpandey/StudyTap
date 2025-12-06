@@ -319,7 +319,7 @@ const AdminAcademicsPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Academics</h1>
           <p className="text-gray-600">Manage branches, semesters, and subjects</p>
         </motion.div>
 

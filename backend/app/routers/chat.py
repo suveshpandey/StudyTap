@@ -19,14 +19,14 @@ router = APIRouter()
 @router.post("/start", response_model=schemas.ChatOut)
 async def start_chat(
     chat_data: schemas.ChatCreate,
-    current_user: models.User = Depends(get_current_student),
+    current_user: models.Student = Depends(get_current_student),
     db: Session = Depends(get_db)
 ):
     """
     Start a new chat session (students only).
-    Creates a Chat row for the current user with the given subject_id.
-    Validates that subject belongs to user's university.
-    get_current_student ensures user is a student, active, and their university is active.
+    Creates a Chat row for the current student with the given subject_id.
+    Validates that subject belongs to student's university.
+    get_current_student ensures student is active and their university is active.
     """
     
     # Validate subject_id is provided
@@ -36,7 +36,7 @@ async def start_chat(
             detail="subject_id is required"
         )
     
-    # Validate that the subject exists and belongs to user's university
+    # Validate that the subject exists and belongs to student's university
     subject = (
         db.query(models.Subject)
         .join(models.Semester, models.Subject.semester_id == models.Semester.id)
@@ -56,7 +56,7 @@ async def start_chat(
 
     # Always start with a generic title; first user question will override it
     new_chat = models.Chat(
-        user_id=current_user.id,
+        student_id=current_user.id,
         subject_id=chat_data.subject_id,
         title="New chat"
     )
@@ -75,18 +75,18 @@ async def start_chat(
 
 @router.get("", response_model=List[schemas.ChatOut])
 async def get_chats(
-    current_user: models.User = Depends(get_current_student),
+    current_user: models.Student = Depends(get_current_student),
     db: Session = Depends(get_db)
 ):
     """
-    Get all chats for the current user, ordered by created_at DESC (students only).
+    Get all chats for the current student, ordered by created_at DESC (students only).
     Returns chat title (first user message) and subject name.
-    get_current_student ensures user is a student, active, and their university is active.
+    get_current_student ensures student is active and their university is active.
     """
     q = (
         db.query(models.Chat, models.Subject)
         .join(models.Subject, models.Chat.subject_id == models.Subject.id)
-        .filter(models.Chat.user_id == current_user.id)
+        .filter(models.Chat.student_id == current_user.id)
         .order_by(models.Chat.created_at.desc())
     )
 
@@ -106,18 +106,18 @@ async def get_chats(
 @router.get("/{chat_id}/messages", response_model=List[schemas.ChatMessageOut])
 async def get_chat_messages(
     chat_id: int,
-    current_user: models.User = Depends(get_current_student),
+    current_user: models.Student = Depends(get_current_student),
     db: Session = Depends(get_db)
 ):
     """
     Get all messages for a chat, ordered by created_at ASC (students only).
-    Returns 403 if chat does not belong to current user or user is not a student.
-    get_current_student ensures user is a student, active, and their university is active.
+    Returns 403 if chat does not belong to current student.
+    get_current_student ensures student is active and their university is active.
     """
-    # Verify chat belongs to user
+    # Verify chat belongs to student
     chat = db.query(models.Chat).filter(
         models.Chat.id == chat_id,
-        models.Chat.user_id == current_user.id
+        models.Chat.student_id == current_user.id
     ).first()
     
     if not chat:
@@ -137,20 +137,20 @@ async def get_chat_messages(
 async def send_message(
     chat_id: int,
     message_data: schemas.ChatMessageCreate,
-    current_user: models.User = Depends(get_current_student),
+    current_user: models.Student = Depends(get_current_student),
     db: Session = Depends(get_db)
 ):
     """
     Send a message in a chat and get Gemini's reply (students only).
     Saves both user message and bot response to the database.
-    Returns 403 if chat does not belong to current user or user is not a student.
-    get_current_student ensures user is a student, active, and their university is active.
+    Returns 403 if chat does not belong to current student.
+    get_current_student ensures student is active and their university is active.
     """
     
     # Load the Chat and verify it belongs to current_user
     chat = db.query(models.Chat).filter(
         models.Chat.id == chat_id,
-        models.Chat.user_id == current_user.id
+        models.Chat.student_id == current_user.id
     ).first()
     
     if not chat:

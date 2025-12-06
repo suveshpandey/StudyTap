@@ -2,7 +2,7 @@
 # File: models.py
 # Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
 # Created On: 01-12-2025
-# Description: SQLAlchemy database models for User, Course, Subject, Chat, ChatMessage, MaterialDocument, and MaterialChunk
+# Description: SQLAlchemy database models for University, Branch, Semester, Subject, Chat, ChatMessage, MaterialDocument, MaterialChunk, MasterAdmin, UniversityAdmin, and Student
 # -----------------------------------------------------------------------------
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, Enum, TIMESTAMP, SmallInteger, DateTime, Boolean
@@ -10,17 +10,6 @@ from sqlalchemy.dialects.mysql import JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
-import enum
-
-
-class UserRole(str, enum.Enum):
-    STUDENT = "STUDENT"
-    ADMIN = "ADMIN"
-
-
-class SenderType(str, enum.Enum):
-    USER = "USER"
-    BOT = "BOT"
 
 
 class University(Base):
@@ -36,28 +25,9 @@ class University(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     # relationships
-    users = relationship("User", back_populates="university")
     branches = relationship("Branch", back_populates="university", cascade="all, delete-orphan")
     university_admins = relationship("UniversityAdmin", back_populates="university")
     students = relationship("Student", back_populates="university")
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    email = Column(String(150), nullable=False, unique=True, index=True)
-    password_hash = Column(String(255), nullable=False)
-    role = Column(String(20), nullable=False, default="student")
-    university_id = Column(Integer, ForeignKey("universities.id"), nullable=True)
-    created_at = Column(TIMESTAMP, server_default=func.now())
-
-    chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")
-    university = relationship("University", back_populates="users")
-    master_admin_profile = relationship("MasterAdmin", uselist=False, back_populates="user")
-    university_admin_profile = relationship("UniversityAdmin", uselist=False, back_populates="user")
-    student_profile = relationship("Student", uselist=False, back_populates="user")
 
 
 class Branch(Base):
@@ -69,6 +39,7 @@ class Branch(Base):
 
     university = relationship("University", back_populates="branches")
     semesters = relationship("Semester", back_populates="branch", cascade="all, delete-orphan")
+    students = relationship("Student", back_populates="branch")
 
 
 class Semester(Base):
@@ -103,12 +74,12 @@ class Chat(Base):
     __tablename__ = "chats"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
     subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
     title = Column(String(255), nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    user = relationship("User", back_populates="chats")
+    student = relationship("Student", back_populates="chats")
     subject = relationship("Subject", back_populates="chats")
     messages = relationship("ChatMessage", back_populates="chat", cascade="all, delete-orphan", order_by="ChatMessage.created_at")
 
@@ -169,11 +140,8 @@ class MasterAdmin(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(150), nullable=False, unique=True, index=True)
     password_hash = Column(String(255), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True)  # Optional, for backward compatibility
     is_active = Column(Boolean, nullable=False, server_default="1")
     created_at = Column(TIMESTAMP, server_default=func.now())
-
-    user = relationship("User", back_populates="master_admin_profile")
 
 
 class UniversityAdmin(Base):
@@ -183,12 +151,10 @@ class UniversityAdmin(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(150), nullable=False, unique=True, index=True)
     password_hash = Column(String(255), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True)  # Optional, for backward compatibility
     university_id = Column(Integer, ForeignKey("universities.id"), nullable=False)
     is_active = Column(Boolean, nullable=False, server_default="1")
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    user = relationship("User", back_populates="university_admin_profile")
     university = relationship("University", back_populates="university_admins")
 
 
@@ -199,11 +165,13 @@ class Student(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(150), nullable=False, unique=True, index=True)
     password_hash = Column(String(255), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=True)  # Optional, for backward compatibility
     university_id = Column(Integer, ForeignKey("universities.id"), nullable=False)
+    branch_id = Column(Integer, ForeignKey("branches.id"), nullable=True)
+    batch_year = Column(Integer, nullable=True)  # e.g., 2024, 2025, etc.
     is_active = Column(Boolean, nullable=False, server_default="1")
     created_at = Column(TIMESTAMP, server_default=func.now())
 
-    user = relationship("User", back_populates="student_profile")
     university = relationship("University", back_populates="students")
+    branch = relationship("Branch", back_populates="students")
+    chats = relationship("Chat", back_populates="student", cascade="all, delete-orphan")
 

@@ -2,7 +2,7 @@
 # File: admin_academics.py
 # Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
 # Created On: 01-12-2025
-# Description: Admin router for managing courses and subjects (CRUD operations)
+# Description: Admin router for managing branches, semesters, and subjects (CRUD operations)
 # -----------------------------------------------------------------------------
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -15,34 +15,18 @@ from app.deps import get_current_university_admin
 router = APIRouter()
 
 
-# Course Management Endpoints
+# ============================================================================
+# BRANCH MANAGEMENT
+# ============================================================================
 
-@router.get("/courses", response_model=List[schemas.CourseResponse])
-async def get_all_courses(
-    current_admin: models.User = Depends(get_current_university_admin),
+@router.get("/branches", response_model=List[schemas.BranchResponse])
+async def get_all_branches(
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
     db: Session = Depends(get_db)
 ):
     """
-    Get all courses for the university admin's university.
-    Returns courses ordered by name, filtered by university_id.
-    """
-    courses = (
-        db.query(models.Course)
-        .filter(models.Course.university_id == current_admin.university_id)
-        .order_by(models.Course.name)
-        .all()
-    )
-    return courses
-
-
-@router.post("/courses", response_model=schemas.CourseResponse)
-async def create_course(
-    course_data: schemas.CourseCreate,
-    current_admin: models.User = Depends(get_current_university_admin),
-    db: Session = Depends(get_db)
-):
-    """
-    Create a new course for the university admin's university.
+    Get all branches for the university admin's university.
+    Returns branches ordered by name, filtered by university_id.
     """
     if current_admin.university_id is None:
         raise HTTPException(
@@ -50,155 +34,343 @@ async def create_course(
             detail="University admin is not assigned to any university.",
         )
     
-    # Check if course with same name already exists in this university
-    existing_course = db.query(models.Course).filter(
-        models.Course.name == course_data.name,
-        models.Course.university_id == current_admin.university_id
-    ).first()
-    
-    if existing_course:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Course with this name already exists in your university"
-        )
-    
-    # Create new course with university_id from current admin
-    new_course = models.Course(
-        name=course_data.name,
-        university_id=current_admin.university_id,
+    branches = (
+        db.query(models.Branch)
+        .filter(models.Branch.university_id == current_admin.university_id)
+        .order_by(models.Branch.name)
+        .all()
     )
-    db.add(new_course)
-    db.commit()
-    db.refresh(new_course)
-    
-    return new_course
+    return branches
 
 
-@router.delete("/courses/{course_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_course(
-    course_id: int,
-    current_admin: models.User = Depends(get_current_university_admin),
+@router.post("/branches", response_model=schemas.BranchResponse)
+async def create_branch(
+    branch_data: schemas.BranchCreate,
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
     db: Session = Depends(get_db)
 ):
     """
-    Delete a course (university admin only).
-    Only allows deletion if course belongs to admin's university.
-    If there are subjects under this course, prevent deletion with 400 error.
+    Create a new branch for the university admin's university.
     """
-    course = (
-        db.query(models.Course)
+    if current_admin.university_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="University admin is not assigned to any university.",
+        )
+    
+    # Check if branch with same name already exists in this university
+    existing_branch = db.query(models.Branch).filter(
+        models.Branch.name == branch_data.name,
+        models.Branch.university_id == current_admin.university_id
+    ).first()
+    
+    if existing_branch:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Branch with this name already exists in your university"
+        )
+    
+    # Create new branch with university_id from current admin
+    new_branch = models.Branch(
+        name=branch_data.name,
+        university_id=current_admin.university_id,
+    )
+    db.add(new_branch)
+    db.commit()
+    db.refresh(new_branch)
+    
+    return new_branch
+
+
+@router.delete("/branches/{branch_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_branch(
+    branch_id: int,
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a branch (university admin only).
+    Only allows deletion if branch belongs to admin's university.
+    If there are semesters under this branch, prevent deletion with 400 error.
+    """
+    branch = (
+        db.query(models.Branch)
         .filter(
-            models.Course.id == course_id,
-            models.Course.university_id == current_admin.university_id
+            models.Branch.id == branch_id,
+            models.Branch.university_id == current_admin.university_id
         )
         .first()
     )
-    if not course:
+    if not branch:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found for your university"
+            detail="Branch not found for your university"
         )
     
-    # Check if there are subjects under this course
-    subjects_count = db.query(models.Subject).filter(
-        models.Subject.course_id == course_id
+    # Check if there are semesters under this branch
+    semesters_count = db.query(models.Semester).filter(
+        models.Semester.branch_id == branch_id
     ).count()
     
-    if subjects_count > 0:
+    if semesters_count > 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot delete course. There are {subjects_count} subject(s) associated with this course. Please delete all subjects first."
+            detail=f"Cannot delete branch. There are {semesters_count} semester(s) associated with this branch. Please delete all semesters first."
         )
     
-    db.delete(course)
+    db.delete(branch)
     db.commit()
     
     return None
 
 
-# Subject Management Endpoints
+# ============================================================================
+# SEMESTER MANAGEMENT
+# ============================================================================
 
-@router.get("/subjects", response_model=List[schemas.SubjectResponse])
-async def get_all_subjects(
-    course_id: Optional[int] = Query(None, description="Optional course ID to filter by"),
-    current_admin: models.User = Depends(get_current_university_admin),
+@router.get("/semesters", response_model=List[schemas.SemesterResponse])
+async def get_all_semesters(
+    branch_id: Optional[int] = Query(None, description="Optional branch ID to filter by"),
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
     db: Session = Depends(get_db)
 ):
     """
-    Get all subjects for courses in the university admin's university.
-    If course_id is provided, ensure it belongs to admin's university and filter by course_id.
+    Get all semesters for branches in the university admin's university.
+    If branch_id is provided, ensure it belongs to admin's university and filter by branch_id.
     """
-    # Base query: join Subject with Course and filter by university_id
+    if current_admin.university_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="University admin is not assigned to any university.",
+        )
+    
+    # Base query: join Semester with Branch and filter by university_id
     query = (
-        db.query(models.Subject)
-        .join(models.Course, models.Subject.course_id == models.Course.id)
-        .filter(models.Course.university_id == current_admin.university_id)
+        db.query(models.Semester)
+        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
+        .filter(models.Branch.university_id == current_admin.university_id)
     )
     
-    if course_id is not None:
-        # Ensure the course_id belongs to admin's university
-        course = (
-            db.query(models.Course)
+    if branch_id is not None:
+        # Ensure the branch_id belongs to admin's university
+        branch = (
+            db.query(models.Branch)
             .filter(
-                models.Course.id == course_id,
-                models.Course.university_id == current_admin.university_id
+                models.Branch.id == branch_id,
+                models.Branch.university_id == current_admin.university_id
             )
             .first()
         )
-        if not course:
+        if not branch:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Course not found for your university"
+                detail="Branch not found for your university"
             )
-        query = query.filter(models.Subject.course_id == course_id)
+        query = query.filter(models.Semester.branch_id == branch_id)
     
-    subjects = query.order_by(models.Subject.course_id, models.Subject.name).all()
+    semesters = query.order_by(models.Semester.branch_id, models.Semester.semester_number).all()
+    return semesters
+
+
+@router.post("/semesters", response_model=schemas.SemesterResponse)
+async def create_semester(
+    semester_data: schemas.SemesterCreate,
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Create a new semester (university admin only).
+    Requires branch_id, semester_number, and name.
+    Validates that branch belongs to admin's university.
+    """
+    if current_admin.university_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="University admin is not assigned to any university.",
+        )
+    
+    # Validate that the branch exists AND belongs to current_admin.university_id
+    branch = (
+        db.query(models.Branch)
+        .filter(
+            models.Branch.id == semester_data.branch_id,
+            models.Branch.university_id == current_admin.university_id,
+        )
+        .first()
+    )
+    if not branch:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Branch not found for your university.",
+        )
+    
+    # Check if semester with same number already exists in this branch
+    existing_semester = db.query(models.Semester).filter(
+        models.Semester.branch_id == semester_data.branch_id,
+        models.Semester.semester_number == semester_data.semester_number
+    ).first()
+    
+    if existing_semester:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Semester {semester_data.semester_number} already exists in this branch"
+        )
+    
+    # Create new semester
+    new_semester = models.Semester(
+        branch_id=semester_data.branch_id,
+        semester_number=semester_data.semester_number,
+        name=semester_data.name
+    )
+    db.add(new_semester)
+    db.commit()
+    db.refresh(new_semester)
+    
+    return new_semester
+
+
+@router.delete("/semesters/{semester_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_semester(
+    semester_id: int,
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a semester (university admin only).
+    Only allows deletion if semester belongs to a branch in admin's university.
+    If there are subjects under this semester, prevent deletion with 400 error.
+    """
+    semester = (
+        db.query(models.Semester)
+        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
+        .filter(
+            models.Semester.id == semester_id,
+            models.Branch.university_id == current_admin.university_id
+        )
+        .first()
+    )
+    if not semester:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Semester not found for your university"
+        )
+    
+    # Check if there are subjects under this semester
+    subjects_count = db.query(models.Subject).filter(
+        models.Subject.semester_id == semester_id
+    ).count()
+    
+    if subjects_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot delete semester. There are {subjects_count} subject(s) associated with this semester. Please delete all subjects first."
+        )
+    
+    db.delete(semester)
+    db.commit()
+    
+    return None
+
+
+# ============================================================================
+# SUBJECT MANAGEMENT
+# ============================================================================
+
+@router.get("/subjects", response_model=List[schemas.SubjectResponse])
+async def get_all_subjects(
+    semester_id: Optional[int] = Query(None, description="Optional semester ID to filter by"),
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all subjects for semesters in the university admin's university.
+    If semester_id is provided, ensure it belongs to admin's university and filter by semester_id.
+    """
+    if current_admin.university_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="University admin is not assigned to any university.",
+        )
+    
+    # Base query: join Subject with Semester and Branch, filter by university_id
+    query = (
+        db.query(models.Subject)
+        .join(models.Semester, models.Subject.semester_id == models.Semester.id)
+        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
+        .filter(models.Branch.university_id == current_admin.university_id)
+    )
+    
+    if semester_id is not None:
+        # Ensure the semester_id belongs to admin's university
+        semester = (
+            db.query(models.Semester)
+            .join(models.Branch, models.Semester.branch_id == models.Branch.id)
+            .filter(
+                models.Semester.id == semester_id,
+                models.Branch.university_id == current_admin.university_id
+            )
+            .first()
+        )
+        if not semester:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Semester not found for your university"
+            )
+        query = query.filter(models.Subject.semester_id == semester_id)
+    
+    subjects = query.order_by(models.Subject.semester_id, models.Subject.name).all()
     return subjects
 
 
 @router.post("/subjects", response_model=schemas.SubjectResponse)
 async def create_subject(
     subject_data: schemas.SubjectCreate,
-    current_admin: models.User = Depends(get_current_university_admin),
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
     db: Session = Depends(get_db)
 ):
     """
     Create a new subject (university admin only).
-    Requires course_id and name. Semester is optional.
-    Validates that course belongs to admin's university.
+    Requires semester_id and name.
+    Validates that semester belongs to admin's university.
     """
-    # Validate that the course exists AND belongs to current_admin.university_id
-    course = (
-        db.query(models.Course)
+    if current_admin.university_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="University admin is not assigned to any university.",
+        )
+    
+    # Validate that the semester exists AND belongs to current_admin.university_id
+    semester = (
+        db.query(models.Semester)
+        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
         .filter(
-            models.Course.id == subject_data.course_id,
-            models.Course.university_id == current_admin.university_id,
+            models.Semester.id == subject_data.semester_id,
+            models.Branch.university_id == current_admin.university_id,
         )
         .first()
     )
-    if not course:
+    if not semester:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Course not found for your university.",
+            detail="Semester not found for your university.",
         )
     
-    # Check if subject with same name already exists in this course
+    # Check if subject with same name already exists in this semester
     existing_subject = db.query(models.Subject).filter(
-        models.Subject.course_id == subject_data.course_id,
+        models.Subject.semester_id == subject_data.semester_id,
         models.Subject.name == subject_data.name
     ).first()
     
     if existing_subject:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Subject with this name already exists in this course"
+            detail="Subject with this name already exists in this semester"
         )
     
     # Create new subject
     new_subject = models.Subject(
-        course_id=subject_data.course_id,
-        name=subject_data.name,
-        semester=subject_data.semester
+        semester_id=subject_data.semester_id,
+        name=subject_data.name
     )
     db.add(new_subject)
     db.commit()
@@ -210,20 +382,21 @@ async def create_subject(
 @router.delete("/subjects/{subject_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_subject(
     subject_id: int,
-    current_admin: models.User = Depends(get_current_university_admin),
+    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
     db: Session = Depends(get_db)
 ):
     """
     Delete a subject (university admin only).
-    Only allows deletion if subject belongs to a course in admin's university.
+    Only allows deletion if subject belongs to a semester in admin's university.
     This will cascade delete related chats and materials.
     """
     subject = (
         db.query(models.Subject)
-        .join(models.Course, models.Subject.course_id == models.Course.id)
+        .join(models.Semester, models.Subject.semester_id == models.Semester.id)
+        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
         .filter(
             models.Subject.id == subject_id,
-            models.Course.university_id == current_admin.university_id
+            models.Branch.university_id == current_admin.university_id
         )
         .first()
     )
@@ -237,5 +410,3 @@ async def delete_subject(
     db.commit()
     
     return None
-
-

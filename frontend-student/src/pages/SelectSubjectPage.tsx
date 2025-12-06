@@ -183,7 +183,7 @@ const SelectSubjectPage = () => {
             </p>
           </div>
 
-          {/* Branch Info Card (Read-only) - Elegant Design */}
+          {/* Branch Info Card (Read-only) - Clean Design */}
           {isLoadingBranch ? (
             <div className="text-center py-8 text-gray-500">
               <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
@@ -194,28 +194,19 @@ const SelectSubjectPage = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="mb-8 relative overflow-hidden bg-white rounded-2xl shadow-xl border-2 border-blue-100"
+              className="mb-8 bg-white rounded-2xl shadow-lg border border-gray-100"
             >
-              {/* Decorative gradient background */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 opacity-50" />
-              
-              <div className="relative p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                    <div className="p-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
-                      <GraduationCap className="w-8 h-8 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Your Branch</p>
-                      <h3 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                        {branch.name}
-                      </h3>
-                    </div>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full border border-blue-200">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-sm font-medium text-blue-700">Assigned</span>
-                  </div>
+              <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
+                <div className="p-2.5 bg-blue-100 rounded-xl">
+                  <GraduationCap className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Your Branch</p>
+                  <h3 className="text-xl font-bold text-gray-900">{branch.name}</h3>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-full border border-blue-200">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  <span className="text-xs font-medium text-blue-700">Assigned</span>
                 </div>
               </div>
             </motion.div>
@@ -232,35 +223,38 @@ const SelectSubjectPage = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white rounded-2xl shadow-lg border border-gray-100"
+              className="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-[500px]"
             >
-              <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
                 <div className="p-2.5 bg-blue-100 rounded-xl">
                   <Layers className="w-5 h-5 text-blue-600" />
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">Select Semester</h2>
               </div>
 
-              <div className="p-6">
+              <div className="flex-1 flex flex-col min-h-0 px-6 py-6">
                 {isLoadingSemesters ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-sm">Loading semesters...</p>
+                  <div className="flex-1 flex items-center justify-center text-gray-500">
+                    <div className="text-center">
+                      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                      <p className="text-sm">Loading semesters...</p>
+                    </div>
                   </div>
                 ) : semesters.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <Layers className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">No semesters available. Contact your admin.</p>
+                  <div className="flex-1 flex items-center justify-center text-gray-500">
+                    <div className="text-center">
+                      <Layers className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">No semesters available. Contact your admin.</p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-gray-100 pr-2 py-1 space-y-3" style={{ scrollBehavior: 'smooth' }}>
                     {semesters.map((semester) => {
                       const isActive = selectedSemesterId === semester.id;
                       return (
                         <motion.button
                           key={semester.id}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
+                          whileTap={{ scale: 0.98 }}
                           type="button"
                           onClick={() => {
                             setSelectedSemesterId(semester.id);
@@ -301,40 +295,45 @@ const SelectSubjectPage = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white rounded-2xl shadow-lg border border-gray-100"
+              className="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col h-[500px]"
             >
-              <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-gray-100 flex-shrink-0">
                 <div className="p-2.5 bg-indigo-100 rounded-xl">
                   <BookOpen className="w-5 h-5 text-indigo-600" />
                 </div>
                 <h2 className="text-xl font-bold text-gray-900">Select Subject</h2>
               </div>
 
-              <div className="p-6">
+              <div className="flex-1 flex flex-col min-h-0 px-6 py-6">
                 {!selectedSemesterId ? (
-                  <div className="text-center py-16 text-gray-400">
-                    <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">Select a semester first</p>
+                  <div className="flex-1 flex items-center justify-center text-gray-400">
+                    <div className="text-center">
+                      <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">Select a semester first</p>
+                    </div>
                   </div>
                 ) : isLoadingSubjects ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-sm">Loading subjects...</p>
+                  <div className="flex-1 flex items-center justify-center text-gray-500">
+                    <div className="text-center">
+                      <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                      <p className="text-sm">Loading subjects...</p>
+                    </div>
                   </div>
                 ) : subjects.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
-                    <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">No subjects available for this semester.</p>
+                  <div className="flex-1 flex items-center justify-center text-gray-500">
+                    <div className="text-center">
+                      <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">No subjects available for this semester.</p>
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-gray-100 pr-2 py-1 space-y-3" style={{ scrollBehavior: 'smooth' }}>
                     {subjects.map((subject) => {
                       const isActive = selectedSubjectId === subject.id;
                       return (
                         <motion.button
                           key={subject.id}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
+                          whileTap={{ scale: 0.98 }}
                           type="button"
                           onClick={() => setSelectedSubjectId(subject.id)}
                           className={`w-full flex items-center gap-4 rounded-xl px-5 py-4 text-left border-2 transition-all cursor-pointer

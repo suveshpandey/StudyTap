@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import ChatMessageBubble from '../components/ChatMessageBubble';
 import ChatInput from '../components/ChatInput';
 import { getChatMessages, sendChatMessage, getChats } from '../api/client';
@@ -16,15 +16,15 @@ import { useAuth } from '../hooks/useAuth';
 import {
   MessageSquare,
   Plus,
-  Menu,
-  X,
   Clock,
   Calendar,
   Brain,
   Sparkles,
   History,
   BookOpen,
-  ChevronRight
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 
 const ChatPage = () => {
@@ -37,7 +37,7 @@ const ChatPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const [isLoadingChats, setIsLoadingChats] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastChatIdRef = useRef<string | undefined>(undefined);
 
@@ -201,133 +201,133 @@ const ChatPage = () => {
 
   return (
     <div className="h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50/50 to-indigo-50/50 flex overflow-hidden">
-      {/* Elegant Sidebar */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.div
-            initial={{ x: -320 }}
-            animate={{ x: 0 }}
-            exit={{ x: -320 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="w-80 bg-white/80 backdrop-blur-xl border-r border-gray-200/60 flex flex-col h-full shadow-xl"
-          >
+      {/* Fixed Sidebar - Full Height */}
+      <motion.div
+        initial={false}
+        animate={{ width: isSidebarVisible ? '20rem' : '0' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className={`bg-white/80 backdrop-blur-xl border-r border-gray-200/60 flex flex-col h-full shadow-xl flex-shrink-0 overflow-hidden ${
+          isSidebarVisible ? 'w-80' : 'w-0'
+        }`}
+      >
             {/* Sidebar Header */}
-            <div className="p-6 border-b border-gray-200/40">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-xl">
-                    <History className="w-5 h-5 text-blue-600" />
+            {isSidebarVisible && (
+              <div className="p-3 border-b border-gray-200/40">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-xl">
+                      <History className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900">Chat History</h2>
+                      <p className="text-sm text-gray-500">{chats.length} conversations</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">Chat History</h2>
-                    <p className="text-sm text-gray-500">{chats.length} conversations</p>
-                  </div>
+                  {/* Toggle Button on Sidebar - Always Visible */}
+                  <button
+                    onClick={() => setIsSidebarVisible(false)}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                    title="Hide sidebar"
+                  >
+                    <PanelLeftClose className="w-5 h-5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="p-2 rounded-xl hover:bg-gray-100/80 transition-all duration-200 cursor-pointer"
-                  aria-label="Close sidebar"
+                
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate('/dashboard')}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold text-sm flex items-center justify-center gap-3 shadow-lg hover:shadow-xl cursor-pointer"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
+                  <Plus className="w-5 h-5" />
+                  New Chat Session
+                </motion.button>
               </div>
-              
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => navigate('/select-subject')}
-                className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold text-sm flex items-center justify-center gap-3 shadow-lg hover:shadow-xl cursor-pointer"
-              >
-                <Plus className="w-5 h-5" />
-                New Chat Session
-              </motion.button>
-            </div>
+            )}
 
             {/* Chat List */}
-            <div className="flex-1 overflow-y-auto">
-              {isLoadingChats ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
-                  <p className="text-sm text-gray-500">Loading your chats...</p>
-                </div>
-              ) : chats.length === 0 ? (
-                <div className="text-center py-12 px-6">
-                  <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <MessageSquare className="w-8 h-8 text-blue-600" />
+            {isSidebarVisible && (
+              <div className="flex-1 overflow-y-auto">
+                {isLoadingChats ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3" />
+                    <p className="text-sm text-gray-500">Loading your chats...</p>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No chats yet</h3>
-                  <p className="text-sm text-gray-500">
-                    Start your first conversation to begin learning
-                  </p>
-                </div>
-              ) : (
-                <div className="p-4 space-y-2">
-                  {chats.map((chat) => (
-                    <motion.button
-                      key={chat.id}
-                      whileHover={{ scale: 1.01 }}
-                      onClick={() => navigate(`/chat/${chat.id}`)}
-                      className={`w-full text-left p-4 rounded-xl transition-all duration-200 border cursor-pointer ${
-                        Number(chatId) === chat.id
-                          ? 'bg-blue-50/80 border-blue-200 shadow-md'
-                          : 'bg-white/60 border-transparent hover:bg-white/80 hover:border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <MessageSquare className="w-4 h-4 text-blue-600" />
-                            <p className="font-semibold text-gray-900 text-sm truncate">
-                              {chat.title || 'New chat'}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {formatDate(chat.created_at)}
+                ) : chats.length === 0 ? (
+                  <div className="text-center py-12 px-6">
+                    <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <MessageSquare className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No chats yet</h3>
+                    <p className="text-sm text-gray-500">
+                      Start your first conversation to begin learning
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-2">
+                    {chats.map((chat) => (
+                      <motion.button
+                        key={chat.id}
+                        whileHover={{ scale: 1.01 }}
+                        onClick={() => navigate(`/chat/${chat.id}`)}
+                        className={`w-full text-left p-4 rounded-xl transition-all duration-200 border cursor-pointer ${
+                          Number(chatId) === chat.id
+                            ? 'bg-blue-50/80 border-blue-200 shadow-md'
+                            : 'bg-white/60 border-transparent hover:bg-white/80 hover:border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <MessageSquare className="w-4 h-4 text-blue-600" />
+                              <p className="font-semibold text-gray-900 text-sm truncate">
+                                {chat.title || 'New chat'}
+                              </p>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {getChatTime(chat.created_at)}
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {formatDate(chat.created_at)}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                {getChatTime(chat.created_at)}
+                              </div>
                             </div>
                           </div>
+                          <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
+                            Number(chatId) === chat.id ? 'text-blue-600' : ''
+                          }`} />
                         </div>
-                        <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${
-                          Number(chatId) === chat.id ? 'text-blue-600' : ''
-                        }`} />
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              )}
-            </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200/60 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2.5 rounded-xl hover:bg-gray-100/80 transition-all duration-200"
-              aria-label="Toggle sidebar"
-            >
-              <Menu className="w-5 h-5 text-gray-600" />
-            </motion.button>
-            
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-xl">
-                <Brain className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900">AI Study Companion</h1>
-                <p className="text-sm text-gray-500">Ready to assist with your learning</p>
-              </div>
+        <div className="bg-white/80 backdrop-blur-xl border-b border-gray-200/60 px-6 py-3 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Toggle Button on Header - Only visible when sidebar is hidden */}
+            {!isSidebarVisible && (
+              <button
+                onClick={() => setIsSidebarVisible(true)}
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer mr-2"
+                title="Show sidebar"
+              >
+                <PanelLeftOpen className="w-5 h-5" />
+              </button>
+            )}
+            <div className="p-2 bg-blue-100 rounded-xl">
+              <Brain className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">AI Study Companion</h1>
+              <p className="text-sm text-gray-500">Ready to assist with your learning</p>
             </div>
           </div>
 
@@ -388,7 +388,7 @@ const ChatPage = () => {
         </div>
 
         {/* Input Area */}
-        <div className="bg-white/80 backdrop-blur-xl border-t border-gray-200/60 px-6 py-6">
+        <div className="bg-white/80 backdrop-blur-xl border-t border-gray-200/60 px-6 py-6 flex-shrink-0">
           <div className="max-w-4xl mx-auto">
             <ChatInput onSend={handleSendMessage} isLoading={isLoading} />
           </div>

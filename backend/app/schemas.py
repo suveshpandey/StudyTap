@@ -15,9 +15,7 @@ class UserSignup(BaseModel):
     name: str
     email: EmailStr
     password: str
-    # role will be ignored for now; public signup is always student
-    role: Optional[str] = "student"
-    university_id: int  # Required for students
+    master_admin_key: Optional[str] = None  # Required secret key for master admin signup
 
 
 class UserLogin(BaseModel):
@@ -51,6 +49,7 @@ class UniversityResponse(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     country: Optional[str] = None
+    is_active: bool
     created_at: datetime
 
     class Config:
@@ -63,34 +62,50 @@ class TokenResponse(BaseModel):
     user: UserResponse
 
 
-# Course schemas
-class CourseResponse(BaseModel):
+# Branch schemas
+class BranchResponse(BaseModel):
     id: int
     name: str
-    university_id: Optional[int] = None
+    university_id: int
 
     class Config:
         from_attributes = True
 
 
-class CourseCreate(BaseModel):
+class BranchCreate(BaseModel):
     name: str
 
 
+# Semester schemas
+class SemesterResponse(BaseModel):
+    id: int
+    branch_id: int
+    semester_number: int
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
+class SemesterCreate(BaseModel):
+    branch_id: int
+    semester_number: int
+    name: str
+
+
+# Subject schemas
 class SubjectResponse(BaseModel):
     id: int
-    course_id: int
+    semester_id: int
     name: str
-    semester: Optional[int] = None
 
     class Config:
         from_attributes = True
 
 
 class SubjectCreate(BaseModel):
-    course_id: int
+    semester_id: int
     name: str
-    semester: Optional[int] = None
 
 
 # Chat schemas
@@ -188,6 +203,69 @@ class MaterialDocumentResponse(BaseModel):
     s3_key: Optional[str] = None
     source_type: str
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MasterAdminResponse(BaseModel):
+    id: int
+    user_id: int
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
+class UniversityAdminResponse(BaseModel):
+    id: int
+    university_id: int
+    is_active: bool
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class StudentResponse(BaseModel):
+    id: int
+    university_id: int
+    branch_id: Optional[int] = None
+    batch_year: Optional[int] = None
+    is_active: bool
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class StudentProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+
+
+class StudentPasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class StudentBulkCreateResponse(BaseModel):
+    """Response for bulk student creation via CSV."""
+    success: int
+    errors: List[str]
+    students: List[dict]  # List of created students with their passwords
+
+
+class UniversityAdminCreateResponse(BaseModel):
+    """Response for creating a university admin, includes plain password for sharing."""
+    id: int
+    university_id: int
+    is_active: bool
+    plain_password: str
+    email: str
+    name: str
 
     class Config:
         from_attributes = True

@@ -148,7 +148,7 @@ const ChatListPage = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/select-subject')}
+                  onClick={() => navigate('/dashboard')}
                   className={`px-6 py-3 bg-gradient-to-r from-${PRIMARY_COLOR}-600 to-indigo-600 text-white rounded-full hover:from-${PRIMARY_COLOR}-700 hover:to-indigo-700 transition-all font-semibold shadow-lg hover:shadow-xl cursor-pointer`}
                 >
                   Start New Chat

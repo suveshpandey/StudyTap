@@ -632,4 +632,3 @@ const MasterUniversityDetailsPage = () => {
 };
 
 export default MasterUniversityDetailsPage;
-

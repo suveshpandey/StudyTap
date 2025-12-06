@@ -2,7 +2,7 @@
 // File: MasterUniversitiesPage.tsx
 // Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
 // Created On: 01-12-2025
-// Description: Master admin page for managing universities and assigning university admins
+// Description: Master admin page for managing universities
 // -----------------------------------------------------------------------------
 
 import { useState, useEffect } from 'react';
@@ -16,17 +16,7 @@ import {
   masterActivateUniversity,
   masterDeactivateUniversity,
   masterCreateUniversityAdmin,
-  masterGetUniversityAdmins,
-  masterActivateUniversityAdmin,
-  masterDeactivateUniversityAdmin,
-  masterDeleteUniversityAdmin,
-  masterGetStudents,
-  masterActivateStudent,
-  masterDeactivateStudent,
-  masterDeleteStudent,
   type University,
-  type UniversityAdmin,
-  type Student,
 } from '../api/client';
 import {
   Building2,
@@ -40,8 +30,6 @@ import {
   Power,
   PowerOff,
   Copy,
-  Users,
-  GraduationCap,
   Eye,
 } from 'lucide-react';
 
@@ -96,20 +84,6 @@ const MasterUniversitiesPage = () => {
   const [creatingAdmin, setCreatingAdmin] = useState<number | null>(null);
   const [createdAdminInfo, setCreatedAdminInfo] = useState<{ [key: number]: { email: string; password: string; universityName: string } }>({});
   const [togglingUniversity, setTogglingUniversity] = useState<number | null>(null);
-  
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'universities' | 'admins' | 'students'>('universities');
-  
-  // University admins and students state
-  const [universityAdmins, setUniversityAdmins] = useState<UniversityAdmin[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loadingAdmins, setLoadingAdmins] = useState(false);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [togglingAdmin, setTogglingAdmin] = useState<number | null>(null);
-  const [togglingStudent, setTogglingStudent] = useState<number | null>(null);
-  
-  // Filter state for students
-  const [selectedUniversityFilter, setSelectedUniversityFilter] = useState<number | null>(null);
 
   // Check master admin access
   useEffect(() => {
@@ -118,29 +92,12 @@ const MasterUniversitiesPage = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Load data based on active tab
+  // Load universities
   useEffect(() => {
     if (user && user.role === 'master_admin') {
-      if (activeTab === 'universities') {
-        loadUniversities();
-      } else if (activeTab === 'admins') {
-        loadUniversityAdmins();
-      } else if (activeTab === 'students') {
-        // Load universities for the filter dropdown if not already loaded
-        if (universities.length === 0) {
-          loadUniversities();
-        }
-        loadStudents();
-      }
+      loadUniversities();
     }
-  }, [user, activeTab]);
-
-  // Reload students when filter changes
-  useEffect(() => {
-    if (user && user.role === 'master_admin' && activeTab === 'students') {
-      loadStudents();
-    }
-  }, [selectedUniversityFilter]);
+  }, [user]);
 
   const loadUniversities = async () => {
     try {
@@ -263,110 +220,6 @@ const MasterUniversitiesPage = () => {
     setTimeout(() => setSuccess(null), 2000);
   };
 
-  const loadUniversityAdmins = async () => {
-    try {
-      setLoadingAdmins(true);
-      setError(null);
-      const data = await masterGetUniversityAdmins();
-      setUniversityAdmins(data);
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || 'Failed to load university admins');
-    } finally {
-      setLoadingAdmins(false);
-    }
-  };
-
-  const loadStudents = async () => {
-    try {
-      setLoadingStudents(true);
-      setError(null);
-      const data = await masterGetStudents(selectedUniversityFilter || undefined);
-      setStudents(data);
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || 'Failed to load students');
-    } finally {
-      setLoadingStudents(false);
-    }
-  };
-
-  const handleToggleAdmin = async (adminId: number, isActive: boolean) => {
-    try {
-      setTogglingAdmin(adminId);
-      setError(null);
-      setSuccess(null);
-      if (isActive) {
-        await masterDeactivateUniversityAdmin(adminId);
-        setSuccess('University admin deactivated successfully');
-      } else {
-        await masterActivateUniversityAdmin(adminId);
-        setSuccess('University admin activated successfully');
-      }
-      await loadUniversityAdmins();
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || 'Failed to update admin status');
-    } finally {
-      setTogglingAdmin(null);
-    }
-  };
-
-  const handleDeleteAdmin = async (adminId: number) => {
-    if (!confirm('Are you sure you want to delete this university admin? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      setSuccess(null);
-      await masterDeleteUniversityAdmin(adminId);
-      setSuccess('University admin deleted successfully');
-      await loadUniversityAdmins();
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || 'Failed to delete admin');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleToggleStudent = async (studentId: number, isActive: boolean) => {
-    try {
-      setTogglingStudent(studentId);
-      setError(null);
-      setSuccess(null);
-      if (isActive) {
-        await masterDeactivateStudent(studentId);
-        setSuccess('Student deactivated successfully');
-      } else {
-        await masterActivateStudent(studentId);
-        setSuccess('Student activated successfully');
-      }
-      await loadStudents();
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || 'Failed to update student status');
-    } finally {
-      setTogglingStudent(null);
-    }
-  };
-
-  const handleDeleteStudent = async (studentId: number) => {
-    if (!confirm('Are you sure you want to delete this student? This will also delete all associated chats and data. This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      setSuccess(null);
-      await masterDeleteStudent(studentId);
-      setSuccess('Student deleted successfully');
-      await loadStudents();
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || 'Failed to delete student');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (authLoading || !user || user.role !== 'master_admin') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -386,54 +239,9 @@ const MasterUniversitiesPage = () => {
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
               <Building2 className="w-8 h-8 text-blue-600" />
-              Master Admin Dashboard
+              Manage Universities
             </h1>
-            <p className="mt-2 text-gray-600">Manage universities, university admins, and students</p>
-          </div>
-
-          {/* Tabs */}
-          <div className="mb-6 border-b border-gray-200">
-            <nav className="flex space-x-8">
-              <button
-                onClick={() => setActiveTab('universities')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors cursor-pointer ${
-                  activeTab === 'universities'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Universities
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab('admins')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors cursor-pointer ${
-                  activeTab === 'admins'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  University Admins
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveTab('students')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors cursor-pointer ${
-                  activeTab === 'students'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4" />
-                  Students
-                </div>
-              </button>
-            </nav>
+            <p className="mt-2 text-gray-600">Create and manage universities</p>
           </div>
 
           {/* Messages */}
@@ -478,9 +286,6 @@ const MasterUniversitiesPage = () => {
             )}
           </AnimatePresence>
 
-          {/* Universities Tab */}
-          {activeTab === 'universities' && (
-            <>
           {/* Create University Form */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -648,7 +453,7 @@ const MasterUniversitiesPage = () => {
                         <button
                           onClick={() => handleDeleteUniversity(uni.id)}
                           disabled={isLoading}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                           title="Delete University"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -739,7 +544,7 @@ const MasterUniversitiesPage = () => {
                               />
                             </div>
                             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-                              <strong>Note:</strong> A random 6-character password will be automatically generated for this admin.
+                              <strong>Note:</strong> A random <strong>8-character numeric</strong> password will be automatically generated for this admin.
                             </div>
                             <div className="flex gap-2">
                               <button
@@ -843,196 +648,6 @@ const MasterUniversitiesPage = () => {
               </div>
             )}
           </motion.div>
-            </>
-          )}
-
-          {/* University Admins Tab */}
-          {activeTab === 'admins' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-            >
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">All University Admins</h2>
-              {loadingAdmins ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                </div>
-              ) : universityAdmins.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  No university admins found. Create universities and assign admins to get started.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {universityAdmins.map((admin) => {
-                    const university = universities.find(u => u.id === admin.university_id);
-                    return (
-                      <motion.div
-                        key={admin.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <h3 className="text-lg font-semibold text-gray-900">{admin.name}</h3>
-                              <span
-                                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                  admin.is_active
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-red-100 text-red-700'
-                                }`}
-                              >
-                                {admin.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                            <div className="mt-1 text-sm text-gray-600 space-y-1">
-                              <div>Email: {admin.email}</div>
-                              {university && <div>University: {university.name}</div>}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleToggleAdmin(admin.id, admin.is_active)}
-                              disabled={togglingAdmin === admin.id}
-                              className={`p-2 rounded-lg transition-colors disabled:opacity-50 cursor-pointer ${
-                                admin.is_active
-                                  ? 'text-orange-600 hover:bg-orange-50'
-                                  : 'text-green-600 hover:bg-green-50'
-                              }`}
-                              title={admin.is_active ? 'Deactivate Admin' : 'Activate Admin'}
-                            >
-                              {togglingAdmin === admin.id ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                              ) : admin.is_active ? (
-                                <PowerOff className="w-5 h-5" />
-                              ) : (
-                                <Power className="w-5 h-5" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAdmin(admin.id)}
-                              disabled={isLoading}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-                              title="Delete Admin"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* Students Tab */}
-          {activeTab === 'students' && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Students</h2>
-                <div className="flex items-center gap-3">
-                  <label htmlFor="universityFilter" className="text-sm font-medium text-gray-700">
-                    Filter by University:
-                  </label>
-                  <select
-                    id="universityFilter"
-                    value={selectedUniversityFilter || ''}
-                    onChange={(e) => setSelectedUniversityFilter(e.target.value ? parseInt(e.target.value) : null)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 cursor-pointer bg-white"
-                  >
-                    <option value="">All Universities</option>
-                    {universities.map((uni) => (
-                      <option key={uni.id} value={uni.id}>
-                        {uni.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              {loadingStudents ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                </div>
-              ) : students.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  No students found.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {students.map((student) => {
-                    const university = universities.find(u => u.id === student.university_id);
-                    return (
-                      <motion.div
-                        key={student.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <h3 className="text-lg font-semibold text-gray-900">{student.name}</h3>
-                              <span
-                                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                  student.is_active
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-red-100 text-red-700'
-                                }`}
-                              >
-                                {student.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                            </div>
-                            <div className="mt-1 text-sm text-gray-600 space-y-1">
-                              <div>Email: {student.email}</div>
-                              {university && <div>University: {university.name}</div>}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => handleToggleStudent(student.id, student.is_active)}
-                              disabled={togglingStudent === student.id}
-                              className={`p-2 rounded-lg transition-colors disabled:opacity-50 cursor-pointer ${
-                                student.is_active
-                                  ? 'text-orange-600 hover:bg-orange-50'
-                                  : 'text-green-600 hover:bg-green-50'
-                              }`}
-                              title={student.is_active ? 'Deactivate Student' : 'Activate Student'}
-                            >
-                              {togglingStudent === student.id ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                              ) : student.is_active ? (
-                                <PowerOff className="w-5 h-5" />
-                              ) : (
-                                <Power className="w-5 h-5" />
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStudent(student.id)}
-                              disabled={isLoading}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-                              title="Delete Student"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              )}
-            </motion.div>
-          )}
         </motion.div>
       </div>
     </div>
@@ -1040,6 +655,3 @@ const MasterUniversitiesPage = () => {
 };
 
 export default MasterUniversitiesPage;
-
-
-

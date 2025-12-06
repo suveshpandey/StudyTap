@@ -1,6 +1,6 @@
-# StudyTap - University AI Assistant
+# University AI Assistant
 
-A full-stack application for a university AI assistant platform that helps students get exam-oriented answers to their questions using Google's Gemini API. The platform includes separate portals for students and administrators.
+A full-stack MVP for a university AI assistant application that helps students get exam-oriented answers to their questions using Google's Gemini API.
 
 ## Tech Stack
 
@@ -25,56 +25,36 @@ A full-stack application for a university AI assistant platform that helps stude
 
 ```
 university_ai_assistant/
-├── backend/                    # FastAPI backend
+├── backend/              # FastAPI backend
 │   ├── app/
-│   │   ├── main.py             # FastAPI app entrypoint
-│   │   ├── database.py         # Database configuration
-│   │   ├── models.py           # SQLAlchemy models
-│   │   ├── schemas.py          # Pydantic schemas
-│   │   ├── auth.py             # JWT and password utilities
-│   │   ├── deps.py             # Dependencies (authentication, etc.)
-│   │   ├── gemini_client.py    # Gemini API integration
-│   │   └── routers/            # API route handlers
-│   │       ├── auth.py         # Authentication routes
-│   │       ├── courses.py      # Course/subject routes
-│   │       ├── chat.py         # Chat routes
-│   │       ├── materials.py    # Study materials routes
-│   │       └── master_*.py     # Master admin routes
-│   ├── requirements.txt        # Python dependencies
-│   ├── .env                    # Environment variables (not in git)
-│   ├── .env.example            # Environment variables template
-│   ├── .gitignore              # Git ignore rules
-│   └── README.md               # Backend setup instructions
+│   │   ├── main.py       # FastAPI app entrypoint
+│   │   ├── database.py   # Database configuration
+│   │   ├── models.py     # SQLAlchemy models
+│   │   ├── schemas.py    # Pydantic schemas
+│   │   ├── auth.py       # JWT and password utilities
+│   │   ├── deps.py       # Dependencies (get_current_user, etc.)
+│   │   ├── gemini_client.py  # Gemini API integration
+│   │   ├── seed.py       # Database seeding script
+│   │   └── routers/      # API route handlers
+│   │       ├── auth.py   # Authentication routes
+│   │       ├── courses.py # Course/subject routes
+│   │       └── chat.py    # Chat routes
+│   ├── requirements.txt  # Python dependencies
+│   ├── .env.example      # Environment variables template
+│   └── README.md         # Backend setup instructions
 │
-├── frontend-admin/             # Admin portal (React)
+├── frontend/             # React frontend
 │   ├── src/
-│   │   ├── api/                # API client configuration
-│   │   ├── components/         # React components
-│   │   ├── pages/              # Admin pages
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── App.tsx             # Main app component
-│   │   └── main.tsx            # Entry point
-│   ├── .env                    # Environment variables (not in git)
-│   ├── .env.example            # Environment variables template
-│   ├── .gitignore              # Git ignore rules
-│   └── README.md               # Admin frontend setup
+│   │   ├── api/          # API client configuration
+│   │   ├── components/   # React components
+│   │   ├── pages/        # Page components
+│   │   ├── hooks/        # Custom React hooks
+│   │   ├── App.tsx       # Main app component
+│   │   └── main.tsx      # Entry point
+│   ├── .env.example      # Environment variables template
+│   └── README.md         # Frontend setup instructions
 │
-├── frontend-student/           # Student portal (React)
-│   ├── src/
-│   │   ├── api/                # API client configuration
-│   │   ├── components/         # React components
-│   │   ├── pages/              # Student pages
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── App.tsx             # Main app component
-│   │   └── main.tsx            # Entry point
-│   ├── .env                    # Environment variables (not in git)
-│   ├── .env.example            # Environment variables template
-│   ├── .gitignore              # Git ignore rules
-│   └── README.md               # Student frontend setup
-│
-├── .gitignore                  # Root git ignore rules
-├── ENVIRONMENT_SETUP.md        # Detailed environment setup guide
-└── README.md                   # This file
+└── README.md             # This file
 ```
 
 ## Getting Started
@@ -147,15 +127,9 @@ API documentation (Swagger UI) at `http://localhost:8000/docs`
 
 ### Frontend Setup
 
-The application has two separate frontend applications:
-- **frontend-admin**: For Master Admins and University Admins
-- **frontend-student**: For Students
-
-#### Admin Portal Setup
-
-1. Navigate to the admin frontend directory:
+1. Navigate to the frontend directory:
 ```bash
-cd frontend-admin
+cd frontend
 ```
 
 2. Install dependencies:
@@ -164,46 +138,21 @@ npm install
 ```
 
 3. Configure environment variables:
+
+Copy `.env.example` to `.env`:
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set `VITE_API_BASE_URL=http://localhost:8000` (or your backend URL)
+Edit `.env` and set:
+- `VITE_API_BASE_URL=http://localhost:8000` (or your backend URL)
 
 4. Run the development server:
 ```bash
 npm run dev
 ```
 
-The admin portal will be available at `http://localhost:5173`
-
-#### Student Portal Setup
-
-1. Navigate to the student frontend directory:
-```bash
-cd frontend-student
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Configure environment variables:
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and set `VITE_API_BASE_URL=http://localhost:8000` (or your backend URL)
-
-4. Run the development server:
-```bash
-npm run dev
-```
-
-The student portal will be available at `http://localhost:5174`
-
-**Note:** See `ENVIRONMENT_SETUP.md` for detailed environment configuration instructions.
+The app will be available at `http://localhost:5173`
 
 ## Application Flow
 
@@ -247,36 +196,13 @@ The student portal will be available at `http://localhost:5174`
 - **chats** - Chat sessions linked to users and subjects
 - **chat_messages** - Messages within chats (USER or BOT)
 
-## Features
+## Future Enhancements
 
-### Student Portal
-- Subject-wise AI chat for exam-oriented Q&A
-- Study materials access
-- Profile management
-- Chat history
-
-### Admin Portal
-- **Master Admin**: 
-  - Manage universities
-  - Create university admins
-  - View all students across universities
-  - Delete users and universities
-- **University Admin**:
-  - Manage academic structure (courses, branches, semesters, subjects)
-  - Upload study materials
-  - Bulk upload students via CSV
-  - Send automated credential emails
-
-## Environment Configuration
-
-All environment variables are stored in separate `.env` files for each application:
-- `backend/.env` - Backend configuration (database, JWT, Gemini API, email)
-- `frontend-admin/.env` - Admin portal configuration
-- `frontend-student/.env` - Student portal configuration
-
-See `ENVIRONMENT_SETUP.md` for detailed setup instructions and all available environment variables.
-
-**Important:** Never commit `.env` files to version control. Use `.env.example` as a template.
+- PDF document upload and RAG (Retrieval Augmented Generation) integration
+- Source citations in chat responses
+- Chat history management (rename, delete)
+- Multiple chat sessions per subject
+- Admin panel for course/subject management
 
 ## License
 

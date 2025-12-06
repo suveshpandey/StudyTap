@@ -255,7 +255,7 @@ const AdminStudentsPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Students</h1>
           <p className="text-gray-600">Manage students via CSV upload</p>
         </motion.div>
 
