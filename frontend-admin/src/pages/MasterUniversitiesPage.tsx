@@ -95,8 +95,8 @@ const MasterUniversitiesPage = () => {
   // Load universities
   useEffect(() => {
     if (user && user.role === 'master_admin') {
-      loadUniversities();
-    }
+          loadUniversities();
+        }
   }, [user]);
 
   const loadUniversities = async () => {
@@ -648,8 +648,8 @@ const MasterUniversitiesPage = () => {
               </div>
             )}
           </motion.div>
-        </motion.div>
-      </div>
+                      </motion.div>
+                </div>
     </div>
   );
 };

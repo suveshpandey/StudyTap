@@ -12,6 +12,7 @@ from app.database import get_db
 from app import models, schemas
 from app.deps import get_current_user, get_current_student
 from app.gemini_client import get_gemini_response
+from app.kendra_client import query_kendra, format_kendra_results_for_gemini, KENDRA_ENABLED
 
 router = APIRouter()
 
@@ -180,60 +181,111 @@ async def send_message(
             detail="You are not allowed to access this chat/subject.",
         )
     
-    # Get subject name from the database subject
+    # Get subject name and university_id from the database
     subject_name = subject.name if subject else "General"
+    university_id = current_user.university_id
     
-    # --- RAG: fetch material chunks for this subject from DB ---
-    question_lower = message_data.question.lower()
-    # Extract words from question for better matching
-    question_words = [w.strip() for w in question_lower.split() if len(w.strip()) > 2]  # Ignore very short words
-    
-    chunks = []
-    if subject:
-        chunks = (
-            db.query(models.MaterialChunk)
-            .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
-            .filter(models.MaterialDocument.subject_id == subject.id)
-            .options(joinedload(models.MaterialChunk.document))
-            .all()
-        )
-    
-    relevant_chunks = []
-    # First, try keyword-based matching
-    for chunk in chunks:
-        if chunk.keywords:
-            keywords = [k.strip().lower() for k in chunk.keywords.split(",") if k.strip()]
-            # Check if any keyword appears in question OR any question word appears in keywords
-            keyword_match = any(kw and (kw in question_lower or any(qw in kw for qw in question_words)) for kw in keywords)
-            if keyword_match:
-                relevant_chunks.append(chunk)
-                if len(relevant_chunks) >= 5:  # Increased limit
-                    break
-    
-    # Fallback: if no keyword matches found, use first few chunks (up to 3)
-    # This ensures we always have context if chunks exist for the subject
-    # This includes chunks without keywords or when keyword matching fails
-    if not relevant_chunks and chunks:
-        relevant_chunks = chunks[:3]
-    
+    # --- RAG: Query AWS Kendra for relevant chunks from S3 ---
     context_text = ""
     sources = []
+    kendra_results = []
     
-    if relevant_chunks:
-        context_text = "Reference material:\n"
-        for chunk in relevant_chunks:
-            doc = chunk.document
-            context_text += f"Title: {doc.title}\n"
-            if chunk.page_number:
-                context_text += f"Page: {chunk.page_number}\n"
-            if chunk.heading:
-                context_text += f"Heading: {chunk.heading}\n"
-            context_text += f"Content: {chunk.text}\n\n"
-            sources.append({
-                "type": "snippet",
-                "title": doc.title,
-                "page": chunk.page_number
-            })
+    # Try to use Kendra if configured
+    if KENDRA_ENABLED:
+        try:
+            # Query Kendra with question, filtered by university and subject
+            kendra_results = query_kendra(
+                question=message_data.question,
+                university_id=university_id,
+                subject_id=subject.id,
+                max_results=5
+            )
+            
+            if kendra_results:
+                # Format Kendra results for Gemini
+                context_text = format_kendra_results_for_gemini(kendra_results)
+                
+                # Build sources list from Kendra results
+                # Look up document titles from database using S3 keys
+                for result in kendra_results:
+                    s3_key = result.get("s3_key", "")
+                    document_title = result.get("document_title", "Unknown")
+                    page_number = result.get("page_number")
+                    
+                    # Try to get the actual document title from database
+                    if s3_key:
+                        material_doc = (
+                            db.query(models.MaterialDocument)
+                            .filter(models.MaterialDocument.s3_key == s3_key)
+                            .first()
+                        )
+                        if material_doc:
+                            document_title = material_doc.title
+                    
+                    # Build source object with page number if available
+                    source_obj = {
+                        "type": "kendra",
+                        "title": document_title,
+                        "uri": result.get("document_uri", ""),
+                        "relevance": result.get("relevance_score", "MEDIUM")
+                    }
+                    
+                    # Add page number if available
+                    if page_number is not None:
+                        source_obj["page"] = int(page_number) if isinstance(page_number, (int, float, str)) and str(page_number).isdigit() else page_number
+                    
+                    sources.append(source_obj)
+        except Exception as e:
+            # Log error but continue with fallback
+            print(f"Error querying Kendra: {str(e)}")
+            # Fallback to database chunks if Kendra fails
+            kendra_results = []
+    
+    # Fallback: Use database chunks if Kendra is not enabled or failed
+    if not kendra_results and not context_text:
+        question_lower = message_data.question.lower()
+        question_words = [w.strip() for w in question_lower.split() if len(w.strip()) > 2]
+        
+        chunks = []
+        if subject:
+            chunks = (
+                db.query(models.MaterialChunk)
+                .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
+                .filter(models.MaterialDocument.subject_id == subject.id)
+                .options(joinedload(models.MaterialChunk.document))
+                .all()
+            )
+        
+        relevant_chunks = []
+        # Try keyword-based matching
+        for chunk in chunks:
+            if chunk.keywords:
+                keywords = [k.strip().lower() for k in chunk.keywords.split(",") if k.strip()]
+                keyword_match = any(kw and (kw in question_lower or any(qw in kw for qw in question_words)) for kw in keywords)
+                if keyword_match:
+                    relevant_chunks.append(chunk)
+                    if len(relevant_chunks) >= 5:
+                        break
+        
+        # Fallback: use first few chunks if no keyword matches
+        if not relevant_chunks and chunks:
+            relevant_chunks = chunks[:3]
+        
+        if relevant_chunks:
+            context_text = "Reference material:\n"
+            for chunk in relevant_chunks:
+                doc = chunk.document
+                context_text += f"Title: {doc.title}\n"
+                if chunk.page_number:
+                    context_text += f"Page: {chunk.page_number}\n"
+                if chunk.heading:
+                    context_text += f"Heading: {chunk.heading}\n"
+                context_text += f"Content: {chunk.text}\n\n"
+                sources.append({
+                    "type": "snippet",
+                    "title": doc.title,
+                    "page": chunk.page_number
+                })
     
     system_prompt = f"""
 You are a helpful AI tutor for a university student.
@@ -300,12 +352,33 @@ Explain briefly, and mention that this answer is based on general knowledge, not
     except Exception as e:
         answer_text = f"Error: {str(e)}"
     
+    # Check if Gemini indicates insufficient information
+    # If so, don't show sources as they weren't useful for answering
+    insufficient_info_phrases = [
+        "i don't have enough information",
+        "don't have enough information",
+        "not enough information",
+        "insufficient information",
+        "please refer to your textbook",
+        "refer to your textbook",
+        "refer to your class notes",
+        "please refer to your class notes"
+    ]
+    
+    answer_lower = answer_text.lower()
+    has_insufficient_info = any(phrase in answer_lower for phrase in insufficient_info_phrases)
+    
+    # Clear sources if Gemini says there's insufficient information
+    final_sources = []
+    if not has_insufficient_info:
+        final_sources = sources
+    
     # Insert bot message
     bot_message = models.ChatMessage(
         chat_id=chat_id,
         sender="BOT",
         message=answer_text,
-        sources=sources or None
+        sources=final_sources if final_sources else None
     )
     db.add(bot_message)
     db.commit()
@@ -314,6 +387,6 @@ Explain briefly, and mention that this answer is based on general knowledge, not
     # Return response with answer, sources, and updated title if applicable
     return {
         "answer": answer_text,
-        "sources": sources,
+        "sources": final_sources,
         "chat_title": updated_title
     }

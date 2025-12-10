@@ -5,7 +5,7 @@
 // Description: Admin page for managing study material documents and chunks
 // -----------------------------------------------------------------------------
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
@@ -13,23 +13,20 @@ import {
   getBranches,
   getSemesters,
   getSubjects,
-  createMaterialDocument,
   getMaterialDocuments,
-  createMaterialChunk,
-  getMaterialChunks,
+  uploadMaterialDocument,
   type Branch,
   type Semester,
   type Subject,
   type MaterialDocument,
-  type MaterialChunk,
 } from '../api/client';
 import {
   BookOpen,
   FileText,
-  Plus,
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Upload,
 } from 'lucide-react';
 
 const AdminMaterialsPage = () => {
@@ -44,15 +41,11 @@ const AdminMaterialsPage = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
   const [documents, setDocuments] = useState<MaterialDocument[]>([]);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
-  const [chunks, setChunks] = useState<MaterialChunk[]>([]);
 
-  // Form states
-  const [newDocumentTitle, setNewDocumentTitle] = useState('');
-  const [newChunkText, setNewChunkText] = useState('');
-  const [newChunkPageNumber, setNewChunkPageNumber] = useState<number | null>(null);
-  const [newChunkHeading, setNewChunkHeading] = useState('');
-  const [newChunkKeywords, setNewChunkKeywords] = useState('');
+  // File upload states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Loading and error states
   const [isLoading, setIsLoading] = useState(false);
@@ -113,18 +106,8 @@ const AdminMaterialsPage = () => {
       loadDocuments(selectedSubjectId);
     } else {
       setDocuments([]);
-      setSelectedDocumentId(null);
     }
   }, [selectedSubjectId]);
-
-  // Load chunks when document is selected
-  useEffect(() => {
-    if (selectedDocumentId) {
-      loadChunks(selectedDocumentId);
-    } else {
-      setChunks([]);
-    }
-  }, [selectedDocumentId]);
 
   const loadBranches = async () => {
     try {
@@ -184,11 +167,6 @@ const AdminMaterialsPage = () => {
       setError(null);
       const data = await getMaterialDocuments(subjectId);
       setDocuments(data);
-      if (data.length > 0 && !selectedDocumentId) {
-        setSelectedDocumentId(data[0].id);
-      } else {
-        setSelectedDocumentId(null);
-      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load documents');
     } finally {
@@ -196,71 +174,49 @@ const AdminMaterialsPage = () => {
     }
   };
 
-  const loadChunks = async (documentId: number) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const data = await getMaterialChunks(documentId);
-      setChunks(data);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load chunks');
-    } finally {
-      setIsLoading(false);
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type (PDF only)
+    if (file.type !== 'application/pdf') {
+      setError('Please upload a PDF file only');
+      return;
     }
+
+    // Validate file size (e.g., max 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+    if (file.size > maxSize) {
+      setError('File size must be less than 50MB');
+      return;
+    }
+
+    setSelectedFile(file);
+    setError(null);
   };
 
-  const handleCreateDocument = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSubjectId || !newDocumentTitle.trim()) {
-      setError('Please select a subject and enter a document title');
+  const handleFileUpload = async () => {
+    if (!selectedFile || !selectedBranchId || !selectedSubjectId) {
+      setError('Please select a branch, subject, and PDF file');
       return;
     }
 
     try {
-      setIsLoading(true);
+      setIsUploading(true);
       setError(null);
       setSuccess(null);
-      await createMaterialDocument(selectedSubjectId, newDocumentTitle.trim());
-      setNewDocumentTitle('');
-      setSuccess('Document created successfully!');
+      await uploadMaterialDocument(selectedFile, selectedBranchId, selectedSubjectId);
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setSuccess('PDF document uploaded successfully to S3!');
       await loadDocuments(selectedSubjectId);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create document');
+      setError(err.response?.data?.detail || 'Failed to upload PDF document');
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreateChunk = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDocumentId || !newChunkText.trim() || !newChunkKeywords.trim()) {
-      setError('Please fill in text and keywords');
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      setSuccess(null);
-      await createMaterialChunk(
-        selectedDocumentId,
-        newChunkPageNumber || null,
-        newChunkHeading.trim() || null,
-        newChunkKeywords.trim(),
-        newChunkText.trim()
-      );
-      setNewChunkText('');
-      setNewChunkPageNumber(null);
-      setNewChunkHeading('');
-      setNewChunkKeywords('');
-      setSuccess('Chunk created successfully!');
-      await loadChunks(selectedDocumentId);
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create chunk');
-    } finally {
-      setIsLoading(false);
+      setIsUploading(false);
     }
   };
 
@@ -286,7 +242,7 @@ const AdminMaterialsPage = () => {
           className="mb-8"
         >
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Manage Materials</h1>
-          <p className="text-gray-600">Manage study materials and content</p>
+          <p className="text-gray-600">Upload PDF documents to AWS S3</p>
         </motion.div>
 
         {/* Error/Success Messages */}
@@ -312,8 +268,7 @@ const AdminMaterialsPage = () => {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column: Selection & Document Creation */}
+        <div className="max-w-3xl mx-auto">
           <div className="space-y-6">
             {/* Branch, Semester & Subject Selection */}
             <motion.div
@@ -386,52 +341,88 @@ const AdminMaterialsPage = () => {
               </div>
             </motion.div>
 
-            {/* Create Document */}
-            {selectedSubjectId && (
+            {/* Upload PDF Document to S3 */}
+            {selectedSubjectId && selectedBranchId && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-white rounded-xl shadow-lg p-6 border border-gray-200"
               >
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-blue-600" />
-                  Create Document
+                  <Upload className="w-5 h-5 text-blue-600" />
+                  Upload PDF Document to S3
                 </h2>
 
-                <form onSubmit={handleCreateDocument} className="space-y-4">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Document Title
+                      PDF File <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="text"
-                      value={newDocumentTitle}
-                      onChange={(e) => setNewDocumentTitle(e.target.value)}
-                      placeholder="e.g., Chapter 1: Introduction"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                      disabled={isLoading}
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={handleFileSelect}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      disabled={isUploading || !selectedBranchId || !selectedSubjectId}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Only PDF files are allowed. Maximum file size: 50MB
+                    </p>
                   </div>
 
+                  {selectedFile && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">
+                            {selectedFile.name}
+                          </span>
+                          <span className="text-xs text-blue-600">
+                            ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedFile(null);
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = '';
+                            }
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          disabled={isUploading}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   <button
-                    type="submit"
-                    disabled={isLoading || !newDocumentTitle.trim()}
+                    type="button"
+                    onClick={handleFileUpload}
+                    disabled={isUploading || !selectedFile || !selectedBranchId || !selectedSubjectId}
                     className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {isLoading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Uploading to S3...
+                      </>
                     ) : (
                       <>
-                        <Plus className="w-4 h-4" />
-                        Create Document
+                        <Upload className="w-4 h-4" />
+                        Upload PDF to S3
                       </>
                     )}
                   </button>
-                </form>
+                </div>
               </motion.div>
             )}
 
-            {/* Documents List */}
+            {/* Uploaded Documents List (Read-only) */}
             {selectedSubjectId && documents.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -440,180 +431,28 @@ const AdminMaterialsPage = () => {
               >
                 <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-blue-600" />
-                  Documents ({documents.length})
+                  Uploaded Documents ({documents.length})
                 </h2>
 
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {documents.map((doc) => (
-                    <button
+                    <div
                       key={doc.id}
-                      onClick={() => setSelectedDocumentId(doc.id)}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors cursor-pointer ${
-                        selectedDocumentId === doc.id
-                          ? 'bg-blue-50 border-blue-200 text-blue-900'
-                          : 'bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-900'
-                      }`}
+                      className="w-full text-left p-3 rounded-lg border bg-gray-50 border-gray-200 text-gray-900"
                     >
                       <div className="font-medium">{doc.title}</div>
                       <div className="text-xs text-gray-500 mt-1">
+                        {doc.s3_key ? (
+                          <span className="text-green-600">Uploaded to S3</span>
+                        ) : (
+                          <span className="text-gray-400">Manual document</span>
+                        )}
+                        {' • '}
                         Created {new Date(doc.created_at).toLocaleDateString()}
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Right Column: Chunk Management */}
-          <div className="space-y-6">
-            {selectedDocumentId ? (
-              <>
-                {/* Create Chunk */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-xl shadow-lg p-6 border border-gray-200"
-                >
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-blue-600" />
-                    Add Chunk
-                  </h2>
-
-                  <form onSubmit={handleCreateChunk} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Content (Text)
-                      </label>
-                      <textarea
-                        value={newChunkText}
-                        onChange={(e) => setNewChunkText(e.target.value)}
-                        placeholder="Enter the content/text for this chunk..."
-                        rows={6}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none"
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Page Number (optional)
-                        </label>
-                        <input
-                          type="number"
-                          value={newChunkPageNumber || ''}
-                          onChange={(e) =>
-                            setNewChunkPageNumber(
-                              e.target.value ? Number(e.target.value) : null
-                            )
-                          }
-                          placeholder="e.g., 12"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Heading (optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={newChunkHeading}
-                          onChange={(e) => setNewChunkHeading(e.target.value)}
-                          placeholder="e.g., Introduction"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Keywords (comma-separated) *
-                      </label>
-                      <input
-                        type="text"
-                        value={newChunkKeywords}
-                        onChange={(e) => setNewChunkKeywords(e.target.value)}
-                        placeholder="e.g., normalization, database, sql"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                        disabled={isLoading}
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Separate keywords with commas
-                      </p>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isLoading || !newChunkText.trim() || !newChunkKeywords.trim()}
-                      className="w-full py-2.5 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <>
-                          <Plus className="w-4 h-4" />
-                          Add Chunk
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </motion.div>
-
-                {/* Chunks List */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-xl shadow-lg p-6 border border-gray-200"
-                >
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    Chunks ({chunks.length})
-                  </h2>
-
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {chunks.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">No chunks yet</p>
-                    ) : (
-                      chunks.map((chunk) => (
-                        <div
-                          key={chunk.id}
-                          className="p-4 bg-gray-50 rounded-lg border border-gray-200"
-                        >
-                          {chunk.heading && (
-                            <div className="font-semibold text-gray-900 mb-2">
-                              {chunk.heading}
-                            </div>
-                          )}
-                          <div className="text-sm text-gray-700 mb-2 whitespace-pre-wrap">
-                            {chunk.text}
-                          </div>
-                          <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
-                            {chunk.page_number && (
-                              <span>Page {chunk.page_number}</span>
-                            )}
-                            <span>Keywords: {chunk.keywords}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-              </>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="bg-white rounded-xl shadow-lg p-12 border border-gray-200 text-center"
-              >
-                <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">
-                  Select a document to view and manage chunks
-                </p>
               </motion.div>
             )}
           </div>

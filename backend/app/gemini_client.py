@@ -32,9 +32,9 @@ async def get_gemini_response(full_prompt: str) -> str:
     # List of models to try in order
     models_to_try = [
         GEMINI_MODEL,
-        "gemini-2.5-pro"
+        "gemini-2.5-flash",
+        "gemini-flash-latest",
     ]
-    
     # Remove duplicates while preserving order
     models_to_try = list(dict.fromkeys(models_to_try))
     

@@ -332,6 +332,27 @@ export const getMaterialChunks = async (documentId: number): Promise<MaterialChu
   return response.data;
 };
 
+export const uploadMaterialDocument = async (
+  file: File,
+  branchId: number,
+  subjectId: number
+): Promise<MaterialDocument> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('branch_id', branchId.toString());
+  formData.append('subject_id', subjectId.toString());
+  const response = await apiClient.post<MaterialDocument>(
+    '/materials/documents/upload',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return response.data;
+};
+
 // Master Admin University Management API functions
 export const masterGetUniversities = async (): Promise<University[]> => {
   const res = await apiClient.get<University[]>("/master/universities");

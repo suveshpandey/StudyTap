@@ -62,6 +62,8 @@ Edit `.env` and update:
   - If MySQL has no password, use: `mysql+pymysql://root@localhost:3306/university_ai_assistant`
 - `JWT_SECRET_KEY` with a secure secret key
 - `GEMINI_API_KEY` with your Google Gemini API key
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, and `AWS_S3_BUCKET` for PDF upload functionality (optional)
+- `KENDRA_INDEX_ID` for RAG-based chat functionality with AWS Kendra (optional, see `KENDRA_SETUP.md`)
 
 **Important**: 
 - Make sure MySQL is running
