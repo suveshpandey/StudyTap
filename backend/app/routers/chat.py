@@ -25,41 +25,50 @@ async def start_chat(
 ):
     """
     Start a new chat session (students only).
-    Creates a Chat row for the current student with the given subject_id.
-    Validates that subject belongs to student's university.
+    Creates a Chat row for the current student.
+    - If subject_id is provided: Creates a subject-specific chat
+    - If subject_id is None: Creates a branch-level chat (all materials in student's branch)
+    Validates that subject belongs to student's university (if subject_id provided).
     get_current_student ensures student is active and their university is active.
     """
     
-    # Validate subject_id is provided
-    if not chat_data.subject_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="subject_id is required"
-        )
+    subject = None
+    subject_name = None
     
-    # Validate that the subject exists and belongs to student's university
-    subject = (
-        db.query(models.Subject)
-        .join(models.Semester, models.Subject.semester_id == models.Semester.id)
-        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
-        .filter(
-            models.Subject.id == chat_data.subject_id,
-            models.Branch.university_id == current_user.university_id
+    # If subject_id is provided, validate it
+    if chat_data.subject_id:
+        # Validate that the subject exists and belongs to student's university
+        subject = (
+            db.query(models.Subject)
+            .join(models.Semester, models.Subject.semester_id == models.Semester.id)
+            .join(models.Branch, models.Semester.branch_id == models.Branch.id)
+            .filter(
+                models.Subject.id == chat_data.subject_id,
+                models.Branch.university_id == current_user.university_id
+            )
+            .first()
         )
-        .first()
-    )
-    
-    if not subject:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Subject not found or does not belong to your university"
-        )
+        
+        if not subject:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Subject not found or does not belong to your university"
+            )
+        subject_name = subject.name
+    else:
+        # Branch-level chat: validate student has a branch
+        if not current_user.branch_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are not assigned to any branch. Please contact your administrator."
+            )
+        subject_name = "Branch-wide Chat"
 
     # Always start with a generic title; first user question will override it
     new_chat = models.Chat(
         student_id=current_user.id,
-        subject_id=chat_data.subject_id,
-        title="New chat"
+        subject_id=chat_data.subject_id,  # Can be None for branch-level chats
+        title="New chat" if chat_data.subject_id else "Branch Chat"
     )
 
     db.add(new_chat)
@@ -69,7 +78,7 @@ async def start_chat(
     return schemas.ChatOut(
         id=new_chat.id,
         title=new_chat.title,
-        subject_name=subject.name if subject else None,
+        subject_name=subject_name,
         created_at=new_chat.created_at,
     )
 
@@ -82,22 +91,32 @@ async def get_chats(
     """
     Get all chats for the current student, ordered by created_at DESC (students only).
     Returns chat title (first user message) and subject name.
+    Handles both subject-specific chats and branch-level chats (where subject_id is NULL).
     get_current_student ensures student is active and their university is active.
     """
     q = (
-        db.query(models.Chat, models.Subject)
-        .join(models.Subject, models.Chat.subject_id == models.Subject.id)
+        db.query(models.Chat)
+        .outerjoin(models.Subject, models.Chat.subject_id == models.Subject.id)
         .filter(models.Chat.student_id == current_user.id)
         .order_by(models.Chat.created_at.desc())
     )
 
     results = []
-    for chat, subject in q.all():
+    for chat in q.all():
+        subject_name = None
+        if chat.subject_id:
+            # Subject-specific chat
+            subject = db.query(models.Subject).filter(models.Subject.id == chat.subject_id).first()
+            subject_name = subject.name if subject else None
+        else:
+            # Branch-level chat
+            subject_name = "Branch-wide Chat"
+        
         results.append(
             schemas.ChatOut(
                 id=chat.id,
                 title=chat.title,
-                subject_name=subject.name if subject else None,
+                subject_name=subject_name,
                 created_at=chat.created_at,
             )
         )
@@ -160,30 +179,58 @@ async def send_message(
             detail="Chat not found or access denied"
         )
     
-    # Load the related Subject, Semester, and Branch to verify university access
-    subject = (
-        db.query(models.Subject)
-        .join(models.Semester, models.Subject.semester_id == models.Semester.id)
-        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
-        .filter(models.Subject.id == chat.subject_id)
-        .first()
-    )
-    
-    # Ensure subject belongs to user's university
-    if (
-        subject is None
-        or subject.semester is None
-        or subject.semester.branch is None
-        or subject.semester.branch.university_id != current_user.university_id
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not allowed to access this chat/subject.",
-        )
-    
-    # Get subject name and university_id from the database
-    subject_name = subject.name if subject else "General"
+    # Handle both subject-specific and branch-level chats
+    subject = None
+    branch = None
+    subject_name = None
     university_id = current_user.university_id
+    
+    if chat.subject_id:
+        # Subject-specific chat: Load and validate subject
+        subject = (
+            db.query(models.Subject)
+            .join(models.Semester, models.Subject.semester_id == models.Semester.id)
+            .join(models.Branch, models.Semester.branch_id == models.Branch.id)
+            .filter(models.Subject.id == chat.subject_id)
+            .first()
+        )
+        
+        # Ensure subject belongs to user's university
+        if (
+            subject is None
+            or subject.semester is None
+            or subject.semester.branch is None
+            or subject.semester.branch.university_id != university_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You are not allowed to access this chat/subject.",
+            )
+        subject_name = subject.name if subject else "General"
+    else:
+        # Branch-level chat: Validate student has a branch
+        if not current_user.branch_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are not assigned to any branch. Please contact your administrator."
+            )
+        
+        # Load and validate branch belongs to student's university
+        branch = (
+            db.query(models.Branch)
+            .filter(
+                models.Branch.id == current_user.branch_id,
+                models.Branch.university_id == university_id
+            )
+            .first()
+        )
+        
+        if not branch:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Branch not found or does not belong to your university."
+            )
+        subject_name = "Branch-wide Chat"
     
     # --- RAG: Query AWS Kendra for relevant chunks from S3 ---
     context_text = ""
@@ -193,13 +240,31 @@ async def send_message(
     # Try to use Kendra if configured
     if KENDRA_ENABLED:
         try:
-            # Query Kendra with question, filtered by university and subject
-            kendra_results = query_kendra(
-                question=message_data.question,
-                university_id=university_id,
-                subject_id=subject.id,
-                max_results=5
-            )
+            # Query Kendra with question, filtered by university and subject/branch
+            if subject:
+                # Subject-specific query
+                kendra_results = query_kendra(
+                    question=message_data.question,
+                    university_id=university_id,
+                    subject_id=subject.id,
+                    max_results=5
+                )
+            elif branch:
+                # Branch-level query
+                kendra_results = query_kendra(
+                    question=message_data.question,
+                    university_id=university_id,
+                    branch_id=branch.id,
+                    max_results=5
+                )
+            
+            # Debug logging (temporary)
+            print(f"[Kendra Debug] Query: '{message_data.question}'")
+            print(f"[Kendra Debug] University ID: {university_id}, Subject ID: {subject.id if subject else None}, Branch ID: {branch.id if branch else None}")
+            print(f"[Kendra Debug] Results count: {len(kendra_results) if kendra_results else 0}")
+            if kendra_results:
+                for i, r in enumerate(kendra_results):
+                    print(f"[Kendra Debug] Result {i+1}: type={r.get('type')}, excerpt_length={len(r.get('excerpt', ''))}, relevance={r.get('relevance_score')}")
             
             if kendra_results:
                 # Format Kendra results for Gemini
@@ -248,10 +313,22 @@ async def send_message(
         
         chunks = []
         if subject:
+            # Subject-specific fallback
             chunks = (
                 db.query(models.MaterialChunk)
                 .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
                 .filter(models.MaterialDocument.subject_id == subject.id)
+                .options(joinedload(models.MaterialChunk.document))
+                .all()
+            )
+        elif branch:
+            # Branch-level fallback: get chunks from all subjects in the branch
+            chunks = (
+                db.query(models.MaterialChunk)
+                .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
+                .join(models.Subject, models.MaterialDocument.subject_id == models.Subject.id)
+                .join(models.Semester, models.Subject.semester_id == models.Semester.id)
+                .filter(models.Semester.branch_id == branch.id)
                 .options(joinedload(models.MaterialChunk.document))
                 .all()
             )
@@ -334,7 +411,9 @@ Explain briefly, and mention that this answer is based on general knowledge, not
     
     # Auto-title chat on first message
     updated_title = None
-    if chat.title in ("New chat", None, subject_name):
+    # Check if chat needs a title update (default titles)
+    default_titles = ("New chat", "Branch Chat", None)
+    if chat.title in default_titles:
         # Create title from first few words of the question, max ~40 chars
         title = message_data.question.strip()
         if len(title) > 40:
@@ -343,8 +422,6 @@ Explain briefly, and mention that this answer is based on general knowledge, not
         updated_title = title
         db.commit()
         db.refresh(chat)
-
-
     
     # Call Gemini API with the full prompt
     try:

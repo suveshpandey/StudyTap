@@ -75,7 +75,7 @@ class Chat(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
-    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False)
+    subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=True)  # Nullable for branch-level chats
     title = Column(String(255), nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 

@@ -60,9 +60,9 @@ export type ChatMessage = {
 };
 
 // Chat API functions
-export const startChat = async (subjectId: number, title?: string): Promise<Chat> => {
+export const startChat = async (subjectId?: number, title?: string): Promise<Chat> => {
   const response = await apiClient.post<Chat>('/chat/start', {
-    subject_id: subjectId,
+    subject_id: subjectId || undefined,
     title: title || undefined,
   });
   return response.data;
@@ -86,12 +86,6 @@ export const sendChatMessage = async (
     `/chat/${chatId}/message`,
     { question }
   );
-  return response.data;
-};
-
-// Public API functions (no auth required)
-export const getUniversities = async (): Promise<University[]> => {
-  const response = await apiClient.get<University[]>('/courses/universities');
   return response.data;
 };
 
@@ -291,6 +285,12 @@ export type University = {
   country?: string | null;
   is_active: boolean;
   created_at: string;
+};
+
+// Public API functions (no auth required)
+export const getUniversities = async (): Promise<University[]> => {
+  const response = await apiClient.get<University[]>('/courses/universities');
+  return response.data;
 };
 
 // Materials API functions

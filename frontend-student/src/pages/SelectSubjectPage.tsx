@@ -149,6 +149,19 @@ const SelectSubjectPage = () => {
     }
   };
 
+  const handleStartBranchChat = async () => {
+    setIsLoading(true);
+    try {
+      const chat = await startChat(undefined, 'Branch Chat');
+      navigate(`/chat/${chat.id}`);
+    } catch (error: any) {
+      console.error('Error starting branch chat:', error);
+      alert(error.response?.data?.detail || 'Error starting branch chat. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/50 to-indigo-50/50">
       {/* Background Visual Element */}
@@ -172,15 +185,65 @@ const SelectSubjectPage = () => {
           className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
         >
           {/* Greeting Section */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             
             <h1 className="text-4xl font-bold text-gray-900 mb-3">
               {greeting}, <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{user?.name || 'Student'}</span>
             </h1>
             
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Select a semester and subject to start your AI-powered learning session
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+              Start an AI-powered learning session with all your branch materials, or select a specific subject
             </p>
+
+            {/* Branch Chat Button - Prominent and Always Visible */}
+            {branch && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="max-w-md mx-auto mb-8"
+              >
+                <motion.button
+                  whileHover={!isLoading ? { scale: 1.02 } : {}}
+                  whileTap={!isLoading ? { scale: 0.98 } : {}}
+                  onClick={handleStartBranchChat}
+                  disabled={isLoading}
+                  className="w-full py-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl 
+                            hover:from-green-700 hover:to-emerald-700 
+                            disabled:opacity-50 disabled:cursor-not-allowed 
+                            transition-all font-bold text-xl shadow-2xl hover:shadow-3xl cursor-pointer
+                            flex items-center justify-center gap-3"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="h-6 w-6 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      <span>Starting Branch Chat...</span>
+                    </>
+                  ) : (
+                    <>
+                      <GraduationCap className="w-6 h-6" />
+                      <span>Start Branch Chat</span>
+                      <Sparkles className="w-6 h-6" />
+                    </>
+                  )}
+                </motion.button>
+                <p className="text-sm text-gray-500 mt-3">
+                  Access all materials from your branch: <span className="font-semibold text-gray-700">{branch.name}</span>
+                </p>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Divider with "OR" text */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 text-gray-500 font-medium">
+                OR Select a Specific Subject
+              </span>
+            </div>
           </div>
 
           {/* Branch Info Card (Read-only) - Clean Design */}
@@ -366,7 +429,7 @@ const SelectSubjectPage = () => {
             </motion.div>
           </div>
 
-          {/* Selection Summary & Start Chat Button */}
+          {/* Subject Selection Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -396,7 +459,7 @@ const SelectSubjectPage = () => {
               </div>
             )}
 
-            {/* Start Chat Button */}
+            {/* Subject-specific Chat Button */}
             <motion.button
               whileHover={!isLoading && selectedSubjectId ? { scale: 1.01 } : {}}
               whileTap={!isLoading && selectedSubjectId ? { scale: 0.99 } : {}}
@@ -411,12 +474,12 @@ const SelectSubjectPage = () => {
               {isLoading ? (
                 <>
                   <div className="h-5 w-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  <span>Starting Chat...</span>
+                  <span>Starting Subject Chat...</span>
                 </>
               ) : (
                 <>
                   <MessageSquare className="w-5 h-5" />
-                  <span>Start AI Learning Session</span>
+                  <span>Start Subject Chat</span>
                   <Sparkles className="w-5 h-5" />
                 </>
               )}
@@ -424,7 +487,7 @@ const SelectSubjectPage = () => {
 
             {!selectedSubjectId && (
               <p className="text-center text-sm text-gray-500">
-                Select a semester and subject to begin
+                Select a semester and subject above to start a subject-specific chat
               </p>
             )}
           </motion.div>

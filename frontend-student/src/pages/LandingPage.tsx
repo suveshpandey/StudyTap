@@ -229,7 +229,7 @@ const LandingPage = () => {
                   <div className="flex items-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 px-3 py-2">
                     <div className="flex-1 flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-pulse" />
-                      <p className="text-[11px] sm:text-xs text-slate-500">CampusMind AI is typing exam-oriented notes...</p>
+                      <p className="text-[11px] sm:text-xs text-slate-500">StudyTap AI is typing exam-oriented notes...</p>
                     </div>
                     <div className={`hidden sm:inline-flex px-2.5 py-1 rounded-full bg-${PRIMARY_COLOR}-50 text-[10px] text-${PRIMARY_COLOR}-700 font-medium border border-${PRIMARY_COLOR}-100`}>
                       Auto-saved
@@ -272,7 +272,7 @@ const LandingPage = () => {
             </span>
           </h2>
           <p className="text-sm sm:text-base text-slate-500 max-w-2xl mx-auto">
-            CampusMind AI fits perfectly into your course structure, units, and exam pattern — not just generic answers.
+            StudyTap AI fits perfectly into your course structure, units, and exam pattern — not just generic answers.
           </p>
         </div>
 

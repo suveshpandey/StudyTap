@@ -89,12 +89,6 @@ export const sendChatMessage = async (
   return response.data;
 };
 
-// Public API functions (no auth required)
-export const getUniversities = async (): Promise<University[]> => {
-  const response = await apiClient.get<University[]>('/courses/universities');
-  return response.data;
-};
-
 // Branch, Semester, and Subject types
 export type Branch = {
   id: number;
@@ -291,6 +285,12 @@ export type University = {
   country?: string | null;
   is_active: boolean;
   created_at: string;
+};
+
+// Public API functions (no auth required)
+export const getUniversities = async (): Promise<University[]> => {
+  const response = await apiClient.get<University[]>('/courses/universities');
+  return response.data;
 };
 
 // Materials API functions

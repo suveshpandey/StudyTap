@@ -110,7 +110,7 @@ class SubjectCreate(BaseModel):
 
 # Chat schemas
 class ChatCreate(BaseModel):
-    subject_id: int
+    subject_id: Optional[int] = None  # Optional for branch-level chats
     title: Optional[str] = None
 
 

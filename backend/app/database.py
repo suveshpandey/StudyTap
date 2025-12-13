@@ -41,6 +41,8 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
 def test_connection():
     """
     Test database connection. Useful for debugging.
