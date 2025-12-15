@@ -282,14 +282,14 @@ For a small university with:
 
 **Total**: ~$74/month
 
-## Fallback Mechanism
+## Document Search
 
-The application includes a fallback mechanism:
+The application uses AWS Kendra exclusively for document search:
 
-1. **Primary**: Uses Kendra if configured and available
-2. **Fallback**: Uses database chunks (MaterialChunk table) if Kendra fails or is not configured
+1. **Kendra Only**: The system uses Kendra for all document search operations
+2. **Note**: The MaterialChunk database table has been removed - all document search is handled by Kendra
 
-This ensures the chat system continues to work even if Kendra is unavailable.
+**Important**: Ensure Kendra is properly configured and available, as there is no database fallback.
 
 ## Advanced Configuration
 

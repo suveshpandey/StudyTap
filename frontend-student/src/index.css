@@ -52,3 +52,149 @@ body {
 .scrollbar-track-gray-100::-webkit-scrollbar-track {
   background: #f3f4f6;
 }
+
+/* Markdown Content Styles */
+.markdown-content {
+  color: #374151;
+  line-height: 1.75;
+  font-size: 15px;
+}
+
+.markdown-content > *:first-child {
+  margin-top: 0;
+}
+
+.markdown-content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Syntax Highlighting Styles */
+.markdown-content pre {
+  position: relative;
+  margin: 1.5rem 0;
+}
+
+.markdown-content pre code {
+  display: block;
+  padding: 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  font-size: 14px;
+  background: transparent;
+  color: inherit;
+}
+
+.markdown-content pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.markdown-content pre::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 4px;
+}
+
+.markdown-content pre::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.markdown-content pre::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Nested lists */
+.markdown-content ul ul,
+.markdown-content ol ol,
+.markdown-content ul ol,
+.markdown-content ol ul {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* List markers */
+.markdown-content ul li::marker {
+  color: #6366f1;
+}
+
+.markdown-content ol li::marker {
+  color: #6366f1;
+  font-weight: 600;
+}
+
+/* Table improvements */
+.markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+}
+
+.markdown-content table th {
+  background: #f8fafc;
+  font-weight: 600;
+  text-align: left;
+}
+
+.markdown-content table td,
+.markdown-content table th {
+  padding: 0.75rem 1rem;
+}
+
+.markdown-content table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Blockquote improvements */
+.markdown-content blockquote p {
+  margin: 0;
+}
+
+/* Link hover effects */
+.markdown-content a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Image styling */
+.markdown-content img {
+  display: block;
+  margin: 1.5rem auto;
+}
+
+/* Task lists (checkboxes) */
+.markdown-content input[type="checkbox"] {
+  margin-right: 0.5rem;
+  accent-color: #6366f1;
+  width: 1.1em;
+  height: 1.1em;
+  cursor: pointer;
+}
+
+/* Inline code improvements */
+.markdown-content code:not(pre code) {
+  background: #f1f5f9;
+  color: #4f46e5;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+/* Horizontal rule */
+.markdown-content hr {
+  margin: 2rem 0;
+  border: none;
+  border-top: 2px solid #e5e7eb;
+}
+
+/* Better spacing for nested content */
+.markdown-content > * + * {
+  margin-top: 0.75rem;
+}
+
+.markdown-content h1 + *,
+.markdown-content h2 + *,
+.markdown-content h3 + *,
+.markdown-content h4 + *,
+.markdown-content h5 + *,
+.markdown-content h6 + * {
+  margin-top: 0.5rem;
+}

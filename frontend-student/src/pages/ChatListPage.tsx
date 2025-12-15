@@ -8,22 +8,34 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getChats } from '../api/client';
+import { getChats, getChatMessages, startChat, getBranches, getSemesters, getSubjects, type Subject } from '../api/client';
 import type { Chat } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
+import StudentSidebar from '../components/StudentSidebar';
+import {
+  MessageSquare,
+  Menu,
+  ArrowLeft,
+  ChevronRight
+} from 'lucide-react';
 
 const ChatListPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [chatsWithDetails, setChatsWithDetails] = useState<Array<{ chat: Chat; firstQuestion: string; answer: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const PRIMARY_COLOR = 'blue';
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
 
   // Show loading while auth is being checked
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-indigo-600">
+          <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <span className="font-medium">Loading...</span>
+        </div>
       </div>
     );
   }
@@ -49,14 +61,75 @@ const ChatListPage = () => {
   useEffect(() => {
     if (isAuthenticated && user?.role === 'student') {
       loadChats();
+      loadSubjects();
     }
   }, [isAuthenticated, user]);
+
+  const loadSubjects = async () => {
+    try {
+      const branches = await getBranches();
+      if (branches && branches.length > 0) {
+        const semesters = await getSemesters(branches[0].id);
+        const allSubjects: Subject[] = [];
+        for (const semester of semesters) {
+          try {
+            const semesterSubjects = await getSubjects(semester.id);
+            allSubjects.push(...semesterSubjects);
+          } catch (error) {
+            console.error(`Failed to load subjects for semester ${semester.id}:`, error);
+          }
+        }
+        setSubjects(allSubjects);
+      }
+    } catch (error) {
+      console.error('Failed to load subjects:', error);
+    }
+  };
+
+  const handleStartChat = async (subjectId?: number) => {
+    try {
+      const chat = subjectId 
+        ? await startChat(subjectId, subjects.find(s => s.id === subjectId)?.name || 'Subject Chat')
+        : await startChat(undefined, 'Branch Chat');
+      navigate(`/chat/${chat.id}`);
+    } catch (error: any) {
+      console.error('Error starting chat:', error);
+      alert(error.response?.data?.detail || 'Error starting chat. Please try again.');
+    }
+  };
 
   const loadChats = async () => {
     setIsLoading(true);
     try {
       const data = await getChats();
-      setChats(data);
+      
+      // Fetch first question and answer for each chat
+      const chatsWithQuestions = await Promise.all(
+        data.map(async (chat) => {
+          try {
+            const messages = await getChatMessages(chat.id);
+            // Find first USER message (the question)
+            const firstUserMessage = messages.find(msg => msg.sender === 'USER');
+            // Find first BOT message (the answer)
+            const firstBotMessage = messages.find(msg => msg.sender === 'BOT');
+            
+            return {
+              chat,
+              firstQuestion: firstUserMessage?.message || chat.title || 'No question found',
+              answer: firstBotMessage?.message || 'No answer yet'
+            };
+          } catch (error) {
+            console.error(`Failed to load messages for chat ${chat.id}:`, error);
+            return {
+              chat,
+              firstQuestion: chat.title || 'Failed to load question',
+              answer: 'Failed to load answer'
+            };
+          }
+        })
+      );
+      
+      setChatsWithDetails(chatsWithQuestions);
     } catch (error) {
       console.error('Error loading chats:', error);
     } finally {
@@ -64,147 +137,157 @@ const ChatListPage = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  // Format time ago helper
+  const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) {
-      return 'Today';
-    } else if (diffInDays === 1) {
-      return 'Yesterday';
-    } else if (diffInDays < 7) {
-      return `${diffInDays} days ago`;
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    }
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
+    return `${Math.floor(diffInSeconds / 2592000)} months ago`;
   };
 
+  // Get color for chat card
+  const getChatColor = (index: number) => {
+    const colors = ['blue', 'green', 'purple', 'orange'];
+    const color = colors[index % colors.length];
+    const colorClasses = {
+      blue: { bg: 'bg-blue-50', text: 'text-blue-600', badge: 'bg-blue-50 text-blue-600' },
+      green: { bg: 'bg-green-50', text: 'text-green-600', badge: 'bg-green-50 text-green-600' },
+      purple: { bg: 'bg-purple-50', text: 'text-purple-600', badge: 'bg-purple-50 text-purple-600' },
+      orange: { bg: 'bg-orange-50', text: 'text-orange-600', badge: 'bg-orange-50 text-orange-600' }
+    };
+    return colorClasses[color as keyof typeof colorClasses] || colorClasses.blue;
+  };
+
+  const filteredChats = chatsWithDetails.filter(item =>
+    item.firstQuestion.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.chat.subject_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.chat.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Background Visual Element */}
-      <div
-        className="absolute inset-x-0 top-0 -z-10 transform-gpu overflow-hidden blur-3xl"
-        aria-hidden="true"
-      >
+    <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
+      {/* Sidebar */}
+      <StudentSidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        searchPlaceholder="Search conversations..."
+      />
+
+      {/* Sidebar Overlay for Mobile */}
+      {sidebarOpen && (
         <div
-          className="relative left-1/2 aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#a6c1ee] to-[#7f8ff4] opacity-20 sm:w-[72.1875rem]"
-          style={{
-            clipPath:
-              'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
-          }}
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
         />
-      </div>
+      )}
 
-      <div className="relative isolate pt-14 pb-28 sm:pt-24 sm:pb-40">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-          className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"
-        >
-          <div className="text-center mb-12">
-            <p className={`text-sm font-semibold leading-6 text-${PRIMARY_COLOR}-600 mb-2 uppercase tracking-wider`}>
-              Your Chats
-            </p>
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
-              Chat History
-            </h1>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              View and continue your previous conversations
-            </p>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100"
-          >
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="text-gray-500">Loading chats...</div>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden text-gray-600 hover:text-gray-900"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => navigate('/home')}
+                className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Chat History</h2>
+                <p className="text-sm text-gray-500">View and continue your previous conversations</p>
               </div>
-            ) : chats.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 ring-4 ring-blue-100">
-                  <svg
-                    className="w-10 h-10 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                    />
-                  </svg>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Wrapper */}
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="p-8">
+
+          {/* Chats List */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">All Conversations</h3>
+              <span className="text-sm text-gray-500">{filteredChats.length} {filteredChats.length === 1 ? 'chat' : 'chats'}</span>
+            </div>
+
+            {isLoading ? (
+              <div className="flex items-center justify-center py-16 text-gray-500">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Loading chats...</span>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No chats yet</h3>
-                <p className="text-gray-500 mb-6">Start a new conversation to get started!</p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/dashboard')}
-                  className={`px-6 py-3 bg-gradient-to-r from-${PRIMARY_COLOR}-600 to-indigo-600 text-white rounded-full hover:from-${PRIMARY_COLOR}-700 hover:to-indigo-700 transition-all font-semibold shadow-lg hover:shadow-xl cursor-pointer`}
+              </div>
+            ) : filteredChats.length === 0 ? (
+              <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
+                <div className="w-20 h-20 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-10 h-10 text-indigo-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No chats found</h3>
+                <p className="text-gray-500 mb-6">
+                  {searchQuery ? 'No chats match your search. Try a different query.' : 'Start a new conversation to see it here!'}
+                </p>
+                <button
+                  onClick={() => navigate('/home')}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-all shadow-sm"
                 >
                   Start New Chat
-                </motion.button>
+                </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                {chats.map((chat) => (
-                  <motion.div
-                    key={chat.id}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate(`/chat/${chat.id}`)}
-                    className="p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer bg-gray-50 hover:bg-white"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">
-                          {chat.title || 'New chat'}
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(chat.created_at)}
-                        </p>
+              <div className="space-y-4">
+                {filteredChats.map((item, index) => {
+                  const colors = getChatColor(index);
+                  const timeAgo = formatTimeAgo(item.chat.created_at);
+                  const subjectName = item.chat.subject_name || 'Branch Chat';
+                  
+                  return (
+                    <motion.div
+                      key={item.chat.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      onClick={() => navigate(`/chat/${item.chat.id}`)}
+                      className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 hover:shadow-md transition-all cursor-pointer"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className={`w-12 h-12 ${colors.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                          <MessageSquare className={`w-6 h-6 ${colors.text}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className={`text-xs font-semibold ${colors.badge} px-2 py-1 rounded`}>{subjectName}</span>
+                            <span className="text-xs text-gray-500">{timeAgo}</span>
+                          </div>
+                          <h4 className="font-semibold text-gray-900 mb-1 truncate">{item.firstQuestion}</h4>
+                          <p className="text-sm text-gray-600 line-clamp-2">{item.answer}</p>
+                        </div>
+                        <button className="text-indigo-600 hover:text-indigo-700 flex-shrink-0">
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
                       </div>
-                      <svg
-                        className="w-5 h-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => navigate('/select-subject')}
-                className={`w-full py-3 bg-gradient-to-r from-${PRIMARY_COLOR}-600 to-indigo-600 text-white rounded-full hover:from-${PRIMARY_COLOR}-700 hover:to-indigo-700 transition-all font-semibold shadow-lg hover:shadow-xl`}
-              >
-                Start New Chat
-              </motion.button>
-            </div>
-          </motion.div>
-        </motion.div>
-      </div>
+          </section>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

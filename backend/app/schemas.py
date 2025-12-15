@@ -170,26 +170,7 @@ class ChatMessageReply(BaseModel):
 
 
 # Materials schemas
-class MaterialChunkCreate(BaseModel):
-    document_id: int
-    page_number: Optional[int] = None
-    heading: Optional[str] = None
-    keywords: str
-    text: str
-
-
-class MaterialChunkResponse(BaseModel):
-    id: int
-    document_id: int
-    page_number: Optional[int] = None
-    heading: Optional[str] = None
-    keywords: str
-    text: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
+# MaterialChunk schemas removed - using Kendra for document search instead
 
 class MaterialDocumentCreate(BaseModel):
     subject_id: int
@@ -236,6 +217,7 @@ class StudentResponse(BaseModel):
     is_active: bool
     name: str
     email: str
+    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -256,6 +238,12 @@ class StudentBulkCreateResponse(BaseModel):
     success: int
     errors: List[str]
     students: List[dict]  # List of created students with their passwords
+
+
+class UniversityAdminCreate(BaseModel):
+    """Schema for creating a university admin (password is auto-generated)."""
+    name: str
+    email: EmailStr
 
 
 class UniversityAdminCreateResponse(BaseModel):

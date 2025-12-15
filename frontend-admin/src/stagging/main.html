@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script> window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-3.1.1.min.js"></script>
+    <style>::-webkit-scrollbar { display: none;}</style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#4F46E5',
+                        'primary-light': '#6366F1',
+                        'primary-lighter': '#818CF8',
+                        'primary-dark': '#4338CA',
+                        'secondary': '#06B6D4',
+                        'accent': '#8B5CF6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-sans">
+
+<div class="flex h-screen overflow-hidden">
+    <aside id="sidebar" class="w-72 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+        <div id="sidebar-header" class="p-6 border-b border-gray-200">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-graduation-cap text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">StudyTap AI</h1>
+                    <p class="text-xs text-gray-500">Admin Dashboard</p>
+                </div>
+            </div>
+            
+            <div class="relative">
+                <input type="text" placeholder="Search..." class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+            </div>
+        </div>
+
+        <nav id="sidebar-nav" class="flex-1 overflow-y-auto p-4">
+            <div class="mb-6">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-4">Main Menu</h3>
+                <div class="space-y-1">
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-chart-line text-gray-400"></i>
+                        <span class="text-sm">Dashboard</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-3 bg-primary/10 text-primary rounded-lg font-medium transition-all">
+                        <i class="fa-solid fa-users text-lg"></i>
+                        <span>Students</span>
+                        <span class="ml-auto bg-primary text-white text-xs px-2 py-0.5 rounded-full">247</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-book text-gray-400"></i>
+                        <span class="text-sm">Courses</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-file-lines text-gray-400"></i>
+                        <span class="text-sm">Documents</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-message-question text-gray-400"></i>
+                        <span class="text-sm">Questions</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-brain text-gray-400"></i>
+                        <span class="text-sm">Quizzes</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-4">Management</h3>
+                <div class="space-y-1">
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-credit-card text-gray-400"></i>
+                        <span class="text-sm">Subscriptions</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-dollar-sign text-gray-400"></i>
+                        <span class="text-sm">Payments</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-bell text-gray-400"></i>
+                        <span class="text-sm">Notifications</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-chart-pie text-gray-400"></i>
+                        <span class="text-sm">Analytics</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-4">System</h3>
+                <div class="space-y-1">
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-gear text-gray-400"></i>
+                        <span class="text-sm">Settings</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-shield text-gray-400"></i>
+                        <span class="text-sm">Security</span>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-database text-gray-400"></i>
+                        <span class="text-sm">Backup</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div id="sidebar-footer" class="p-4 border-t border-gray-200">
+            <div class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-all">
+                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-8.jpg" alt="Admin" class="w-10 h-10 rounded-full border-2 border-primary/20">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-gray-900">Admin User</p>
+                    <p class="text-xs text-gray-500">admin@studytap.ai</p>
+                </div>
+                <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+            </div>
+        </div>
+    </aside>
+
+    <main id="main-content" class="flex-1 flex flex-col overflow-hidden">
+        <header id="header" class="bg-white border-b border-gray-200 px-8 py-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button class="lg:hidden text-gray-600 hover:text-gray-900">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Student Management</h2>
+                        <p class="text-sm text-gray-500">Manage and monitor registered students</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-all">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add Student</span>
+                    </button>
+                    
+                    <button class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Export</span>
+                    </button>
+                    
+                    <button class="relative p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-bell text-xl"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </button>
+                    
+                    <button class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                        <i class="fa-solid fa-gear text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div id="content-wrapper" class="flex-1 overflow-y-auto bg-gray-50">
+            <div class="p-8">
+                <section id="stats-section" class="mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                                    <i class="fa-solid fa-users text-blue-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">+12%</span>
+                            </div>
+                            <h3 class="text-3xl font-bold text-gray-900 mb-1">247</h3>
+                            <p class="text-sm text-gray-600">Total Students</p>
+                            <div class="mt-3 pt-3 border-t border-gray-100">
+                                <p class="text-xs text-gray-500">32 new this month</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                                    <i class="fa-solid fa-user-check text-green-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs font-semibold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-full">Active</span>
+                            </div>
+                            <h3 class="text-3xl font-bold text-gray-900 mb-1">189</h3>
+                            <p class="text-sm text-gray-600">Active Students</p>
+                            <div class="mt-3 pt-3 border-t border-gray-100">
+                                <p class="text-xs text-gray-500">76.5% activity rate</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+                                    <i class="fa-solid fa-crown text-purple-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">Premium</span>
+                            </div>
+                            <h3 class="text-3xl font-bold text-gray-900 mb-1">142</h3>
+                            <p class="text-sm text-gray-600">Premium Users</p>
+                            <div class="mt-3 pt-3 border-t border-gray-100">
+                                <p class="text-xs text-gray-500">57.5% conversion</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
+                                    <i class="fa-solid fa-chart-line text-orange-600 text-xl"></i>
+                                </div>
+                                <span class="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">+8%</span>
+                            </div>
+                            <h3 class="text-3xl font-bold text-gray-900 mb-1">12,459</h3>
+                            <p class="text-sm text-gray-600">Total Questions</p>
+                            <div class="mt-3 pt-3 border-t border-gray-100">
+                                <p class="text-xs text-gray-500">Avg. 50.4 per student</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="filters-section" class="mb-6">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div class="lg:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Search Students</label>
+                                <div class="relative">
+                                    <input type="text" placeholder="Search by name or email..." class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                                    <i class="fa-solid fa-search absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Semester</label>
+                                <select class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                                    <option>All Semesters</option>
+                                    <option>1st Semester</option>
+                                    <option>2nd Semester</option>
+                                    <option>3rd Semester</option>
+                                    <option>4th Semester</option>
+                                    <option>5th Semester</option>
+                                    <option>6th Semester</option>
+                                    <option>7th Semester</option>
+                                    <option>8th Semester</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Subscription</label>
+                                <select class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                                    <option>All Plans</option>
+                                    <option>Free</option>
+                                    <option>Basic</option>
+                                    <option>Premium</option>
+                                    <option>Enterprise</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                <select class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                                    <option>All Status</option>
+                                    <option>Active</option>
+                                    <option>Inactive</option>
+                                    <option>Suspended</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                            <div class="flex items-center gap-3">
+                                <button class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg transition-all border border-gray-200">
+                                    <i class="fa-solid fa-filter"></i>
+                                    <span>More Filters</span>
+                                </button>
+                                <button class="px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5 rounded-lg transition-all">
+                                    <i class="fa-solid fa-rotate-right mr-2"></i>Reset Filters
+                                </button>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                Showing <span class="font-semibold text-gray-900">247</span> students
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="students-table-section" class="mb-8">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <h3 class="text-lg font-bold text-gray-900">Student List</h3>
+                                <div class="flex items-center gap-2">
+                                    <button class="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg">All</button>
+                                    <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all">Active</button>
+                                    <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all">Premium</button>
+                                    <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-all">Free</button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                                <button class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded">
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            <div class="flex items-center gap-2 cursor-pointer">
+                                                <span>Student Name</span>
+                                                <i class="fa-solid fa-sort text-gray-400"></i>
+                                            </div>
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            <div class="flex items-center gap-2 cursor-pointer">
+                                                <span>Semester</span>
+                                                <i class="fa-solid fa-sort text-gray-400"></i>
+                                            </div>
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            <div class="flex items-center gap-2 cursor-pointer">
+                                                <span>Questions</span>
+                                                <i class="fa-solid fa-sort text-gray-400"></i>
+                                            </div>
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            <div class="flex items-center gap-2 cursor-pointer">
+                                                <span>Quizzes</span>
+                                                <i class="fa-solid fa-sort text-gray-400"></i>
+                                            </div>
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Subscription</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                            <div class="flex items-center gap-2 cursor-pointer">
+                                                <span>Last Active</span>
+                                                <i class="fa-solid fa-sort text-gray-400"></i>
+                                            </div>
+                                        </th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <tr class="hover:bg-gray-50 transition-all cursor-pointer" onclick="openStudentModal('sarah')">
+                                        <td class="px-6 py-4">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" onclick="event.stopPropagation()">
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg" alt="Student" class="w-10 h-10 rounded-full border-2 border-primary/20">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">Sarah Mitchell</p>
+                                                    <p class="text-xs text-gray-500">ID: STU-2024-001</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">sarah.mitchell@mit.edu</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">6th Semester</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">247</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">38</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
+                                                <i class="fa-solid fa-crown"></i>
+                                                Premium
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-600">2 hours ago</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" onclick="event.stopPropagation(); openStudentModal('sarah')">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-secondary hover:bg-cyan-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-gray-50 transition-all cursor-pointer" onclick="openStudentModal('marcus')">
+                                        <td class="px-6 py-4">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" onclick="event.stopPropagation()">
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg" alt="Student" class="w-10 h-10 rounded-full border-2 border-secondary/20">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">Marcus Chen</p>
+                                                    <p class="text-xs text-gray-500">ID: STU-2024-002</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">marcus.chen@stanford.edu</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">5th Semester</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">189</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">42</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
+                                                <i class="fa-solid fa-crown"></i>
+                                                Premium
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-600">5 hours ago</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" onclick="event.stopPropagation(); openStudentModal('marcus')">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-secondary hover:bg-cyan-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-gray-50 transition-all cursor-pointer" onclick="openStudentModal('emily')">
+                                        <td class="px-6 py-4">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" onclick="event.stopPropagation()">
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg" alt="Student" class="w-10 h-10 rounded-full border-2 border-accent/20">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">Emily Rodriguez</p>
+                                                    <p class="text-xs text-gray-500">ID: STU-2024-003</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">emily.rodriguez@harvard.edu</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">7th Semester</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">312</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">56</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+                                                Basic
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-600">1 day ago</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" onclick="event.stopPropagation(); openStudentModal('emily')">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-secondary hover:bg-cyan-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-gray-50 transition-all cursor-pointer">
+                                        <td class="px-6 py-4">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" onclick="event.stopPropagation()">
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-2.jpg" alt="Student" class="w-10 h-10 rounded-full border-2 border-gray-200">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">Alex Johnson</p>
+                                                    <p class="text-xs text-gray-500">ID: STU-2024-004</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">alex.johnson@yale.edu</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">4th Semester</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">156</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">28</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
+                                                Free
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-600">3 days ago</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-secondary hover:bg-cyan-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-gray-50 transition-all cursor-pointer">
+                                        <td class="px-6 py-4">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" onclick="event.stopPropagation()">
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-9.jpg" alt="Student" class="w-10 h-10 rounded-full border-2 border-gray-200">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">David Park</p>
+                                                    <p class="text-xs text-gray-500">ID: STU-2024-005</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">david.park@berkeley.edu</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">3rd Semester</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">98</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">15</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
+                                                <i class="fa-solid fa-crown"></i>
+                                                Premium
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-600">12 hours ago</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-secondary hover:bg-cyan-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-gray-50 transition-all cursor-pointer">
+                                        <td class="px-6 py-4">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" onclick="event.stopPropagation()">
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" alt="Student" class="w-10 h-10 rounded-full border-2 border-gray-200">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">Jessica Taylor</p>
+                                                    <p class="text-xs text-gray-500">ID: STU-2024-006</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">jessica.taylor@princeton.edu</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">8th Semester</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">423</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">67</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
+                                                <i class="fa-solid fa-crown"></i>
+                                                Premium
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-600">30 mins ago</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-secondary hover:bg-cyan-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-gray-50 transition-all cursor-pointer">
+                                        <td class="px-6 py-4">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" onclick="event.stopPropagation()">
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-4.jpg" alt="Student" class="w-10 h-10 rounded-full border-2 border-gray-200">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">Michael Brown</p>
+                                                    <p class="text-xs text-gray-500">ID: STU-2024-007</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">michael.brown@columbia.edu</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">2nd Semester</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">67</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">9</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full">
+                                                Free
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-600">2 weeks ago</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-secondary hover:bg-cyan-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <tr class="hover:bg-gray-50 transition-all cursor-pointer">
+                                        <td class="px-6 py-4">
+                                            <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded" onclick="event.stopPropagation()">
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-7.jpg" alt="Student" class="w-10 h-10 rounded-full border-2 border-gray-200">
+                                                <div>
+                                                    <p class="font-semibold text-gray-900">Sophie Anderson</p>
+                                                    <p class="text-xs text-gray-500">ID: STU-2024-008</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">sophie.anderson@cornell.edu</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-700">5th Semester</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">234</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm font-semibold text-gray-900">45</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+                                                Basic
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="text-sm text-gray-600">8 hours ago</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-primary/5 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-secondary hover:bg-cyan-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-bell"></i>
+                                                </button>
+                                                <button class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" onclick="event.stopPropagation()">
+                                                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                Showing <span class="font-semibold text-gray-900">1-8</span> of <span class="font-semibold text-gray-900">247</span> students
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <i class="fa-solid fa-chevron-left mr-2"></i>Previous
+                                </button>
+                                <div class="flex items-center gap-1">
+                                    <button class="w-10 h-10 text-sm font-medium text-white bg-primary rounded-lg">1</button>
+                                    <button class="w-10 h-10 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-all">2</button>
+                                    <button class="w-10 h-10 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-all">3</button>
+                                    <span class="px-2 text-gray-500">...</span>
+                                    <button class="w-10 h-10 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-all">31</button>
+                                </div>
+                                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">
+                                    Next<i class="fa-solid fa-chevron-right ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="analytics-section" class="mb-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Student Activity Trend</h3>
+                            <div id="activity-chart" style="height: 300px"></div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Subscription Distribution</h3>
+                            <div id="subscription-chart" style="height: 300px"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <footer id="footer" class="bg-white border-t border-gray-200 px-8 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-6 text-sm text-gray-600">
+                    <a href="#" class="hover:text-primary transition-all">Terms of Service</a>
+                    <a href="#" class="hover:text-primary transition-all">Privacy Policy</a>
+                    <a href="#" class="hover:text-primary transition-all">Help Center</a>
+                    <a href="#" class="hover:text-primary transition-all">Contact Support</a>
+                </div>
+                <div class="text-sm text-gray-600">
+                    © 2024 StudyTap AI. All rights reserved.
+                </div>
+            </div>
+        </footer>
+    </main>
+</div>
+
+<div id="student-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="closeStudentModal(event)">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+        <div class="bg-primary px-8 py-6 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <img id="modal-avatar" src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg" alt="Student" class="w-16 h-16 rounded-full border-4 border-white/20">
+                <div>
+                    <h3 id="modal-name" class="text-2xl font-bold text-white">Sarah Mitchell</h3>
+                    <p id="modal-email" class="text-indigo-100">sarah.mitchell@mit.edu</p>
+                </div>
+            </div>
+            <button onclick="closeStudentModal()" class="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-lg text-white transition-all">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+
+        <div class="overflow-y-auto max-h-[calc(90vh-120px)]">
+            <div class="p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-blue-50 rounded-xl p-5 border border-blue-100">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-message-question text-white"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-blue-600 font-medium">Total Questions</p>
+                                <p class="text-2xl font-bold text-gray-900">247</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-green-50 rounded-xl p-5 border border-green-100">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-brain text-white"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-green-600 font-medium">Quizzes Taken</p>
+                                <p class="text-2xl font-bold text-gray-900">38</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-purple-50 rounded-xl p-5 border border-purple-100">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
+                                <i class="fa-solid fa-star text-white"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-purple-600 font-medium">Avg. Score</p>
+                                <p class="text-2xl font-bold text-gray-900">92%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">Profile Information</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Student ID</span>
+                                <span class="text-sm font-semibold text-gray-900">STU-2024-001</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">University</span>
+                                <span class="text-sm font-semibold text-gray-900">MIT</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Semester</span>
+                                <span class="text-sm font-semibold text-gray-900">6th Semester</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Department</span>
+                                <span class="text-sm font-semibold text-gray-900">Computer Science</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Joined Date</span>
+                                <span class="text-sm font-semibold text-gray-900">Jan 15, 2024</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2">
+                                <span class="text-sm text-gray-600">Last Active</span>
+                                <span class="text-sm font-semibold text-green-600">2 hours ago</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border border-gray-200 p-6">
+                        <h4 class="text-lg font-bold text-gray-900 mb-4">Subscription Details</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Current Plan</span>
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
+                                    <i class="fa-solid fa-crown"></i>
+                                    Premium
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Billing Cycle</span>
+                                <span class="text-sm font-semibold text-gray-900">Monthly</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Start Date</span>
+                                <span class="text-sm font-semibold text-gray-900">Jan 15, 2024</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Next Billing</span>
+                                <span class="text-sm font-semibold text-gray-900">Feb 15, 2024</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span class="text-sm text-gray-600">Amount</span>
+                                <span class="text-sm font-semibold text-gray-900">₹499/month</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2">
+                                <span class="text-sm text-gray-600">Status</span>
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+                                    <i class="fa-solid fa-check-circle"></i>
+                                    Active
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                    <h4 class="text-lg font-bold text-gray-900 mb-4">Recent Activity</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-message-question text-blue-600 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900 mb-1">Asked a question in Data Structures</p>
+                                <p class="text-xs text-gray-600 mb-1">What is the time complexity of binary search?</p>
+                                <span class="text-xs text-gray-500">2 hours ago</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-brain text-green-600 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900 mb-1">Completed quiz in Machine Learning</p>
+                                <p class="text-xs text-gray-600 mb-1">Score: 95% (19/20 correct)</p>
+                                <span class="text-xs text-gray-500">5 hours ago</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-file-upload text-purple-600 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900 mb-1">Uploaded new document</p>
+                                <p class="text-xs text-gray-600 mb-1">Neural Networks Lecture Notes.pdf</p>
+                                <span class="text-xs text-gray-500">1 day ago</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-image text-orange-600 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900 mb-1">Asked image-based question</p>
+                                <p class="text-xs text-gray-600 mb-1">Explain this neural network diagram</p>
+                                <span class="text-xs text-gray-500">1 day ago</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div class="w-8 h-8 bg-cyan-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-bookmark text-cyan-600 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900 mb-1">Saved answer to library</p>
+                                <p class="text-xs text-gray-600 mb-1">ACID properties in databases</p>
+                                <span class="text-xs text-gray-500">2 days ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button class="flex-1 px-6 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-all">
+                        <i class="fa-solid fa-bell mr-2"></i>Send Notification
+                    </button>
+                    <button class="flex-1 px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all">
+                        <i class="fa-solid fa-key mr-2"></i>Reset Password
+                    </button>
+                    <button class="flex-1 px-6 py-3 bg-red-50 text-red-600 font-semibold rounded-xl hover:bg-red-100 transition-all border border-red-200">
+                        <i class="fa-solid fa-ban mr-2"></i>Deactivate Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+window.addEventListener('load', function() {
+    try {
+        var activityData = [{
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Active Students',
+            x: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            y: [145, 167, 189, 178, 192, 156, 134],
+            line: { color: '#4F46E5', width: 3 },
+            fill: 'tozeroy',
+            fillcolor: 'rgba(79, 70, 229, 0.1)'
+        }];
+        
+        var activityLayout = {
+            margin: { t: 20, r: 20, b: 40, l: 40 },
+            plot_bgcolor: '#ffffff',
+            paper_bgcolor: '#ffffff',
+            xaxis: { title: '', showgrid: false, color: '#6B7280' },
+            yaxis: { title: 'Active Students', showgrid: true, gridcolor: '#F3F4F6', color: '#6B7280' },
+            showlegend: false,
+            font: { color: '#6B7280' }
+        };
+        
+        Plotly.newPlot('activity-chart', activityData, activityLayout, {responsive: true, displayModeBar: false, displaylogo: false});
+
+        var subscriptionData = [{
+            type: 'pie',
+            labels: ['Premium', 'Basic', 'Free'],
+            values: [142, 58, 47],
+            marker: { colors: ['#8B5CF6', '#06B6D4', '#6B7280'] },
+            textinfo: 'label+percent',
+            textposition: 'inside',
+            hovertemplate: '<b>%{label}</b><br>%{value} students<br>%{percent}<extra></extra>'
+        }];
+        
+        var subscriptionLayout = {
+            margin: { t: 20, r: 20, b: 20, l: 20 },
+            plot_bgcolor: '#ffffff',
+            paper_bgcolor: '#ffffff',
+            showlegend: true,
+            legend: { orientation: 'h', y: -0.1 },
+            font: { color: '#6B7280' }
+        };
+        
+        Plotly.newPlot('subscription-chart', subscriptionData, subscriptionLayout, {responsive: true, displayModeBar: false, displaylogo: false});
+    } catch(e) {
+        console.error('Chart rendering error:', e);
+    }
+});
+
+function openStudentModal(student) {
+    const modal = document.getElementById('student-modal');
+    const studentData = {
+        sarah: {
+            name: 'Sarah Mitchell',
+            email: 'sarah.mitchell@mit.edu',
+            avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg'
+        },
+        marcus: {
+            name: 'Marcus Chen',
+            email: 'marcus.chen@stanford.edu',
+            avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-3.jpg'
+        },
+        emily: {
+            name: 'Emily Rodriguez',
+            email: 'emily.rodriguez@harvard.edu',
+            avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg'
+        }
+    };
+    
+    if (studentData[student]) {
+        document.getElementById('modal-name').textContent = studentData[student].name;
+        document.getElementById('modal-email').textContent = studentData[student].email;
+        document.getElementById('modal-avatar').src = studentData[student].avatar;
+    }
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeStudentModal(event) {
+    if (!event || event.target.id === 'student-modal') {
+        const modal = document.getElementById('student-modal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+}
+</script>
+
+</body>
+</html>

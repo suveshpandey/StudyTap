@@ -69,8 +69,7 @@ const Navbar = () => {
     }
     // For university admin, check individual routes
     if (path === '/admin/academics') {
-      // Also active when on /admin/subjects since it redirects to academics
-      return location.pathname === '/admin/academics' || location.pathname === '/admin/subjects';
+      return location.pathname === '/admin/academics';
     }
     if (path === '/admin/students') {
       return location.pathname === '/admin/students';

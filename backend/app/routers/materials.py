@@ -2,7 +2,7 @@
 # File: materials.py
 # Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
 # Created On: 01-12-2025
-# Description: Admin router for managing study material documents and chunks
+# Description: Admin router for managing study material documents (using Kendra for search)
 # -----------------------------------------------------------------------------
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
@@ -107,94 +107,7 @@ async def get_documents_by_subject(
     return documents
 
 
-@router.post("/chunks", response_model=schemas.MaterialChunkResponse)
-async def create_chunk(
-    chunk_data: schemas.MaterialChunkCreate,
-    current_admin: models.UniversityAdmin = Depends(get_current_university_admin),
-    db: Session = Depends(get_db)
-):
-    """
-    Create a new material chunk (university admin only).
-    Validates that the MaterialDocument exists and belongs to admin's university.
-    """
-    # Validate that MaterialDocument exists and belongs to admin's university
-    document = (
-        db.query(models.MaterialDocument)
-        .join(models.Subject, models.MaterialDocument.subject_id == models.Subject.id)
-        .join(models.Semester, models.Subject.semester_id == models.Semester.id)
-        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
-        .filter(
-            models.MaterialDocument.id == chunk_data.document_id,
-            models.Branch.university_id == current_admin.university_id
-        )
-        .first()
-    )
-    if not document:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Material document not found or does not belong to your university"
-        )
-    
-    # Create MaterialChunk
-    new_chunk = models.MaterialChunk(
-        document_id=chunk_data.document_id,
-        page_number=chunk_data.page_number,
-        heading=chunk_data.heading,
-        keywords=chunk_data.keywords,
-        text=chunk_data.text
-    )
-    db.add(new_chunk)
-    db.commit()
-    db.refresh(new_chunk)
-    
-    return new_chunk
-
-
-@router.get("/chunks/{document_id}", response_model=List[schemas.MaterialChunkResponse])
-async def get_chunks_by_document(
-    document_id: int,
-    current_user: RoleModel = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Get all material chunks for a specific document.
-    Only returns chunks for documents in the user's university.
-    Returns list ordered by created_at ASC.
-    """
-    # Get university_id based on role
-    university_id = None
-    if isinstance(current_user, models.Student):
-        university_id = current_user.university_id
-    elif isinstance(current_user, models.UniversityAdmin):
-        university_id = current_user.university_id
-    elif isinstance(current_user, models.MasterAdmin):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Master admin cannot access chunks. Please use the admin panel."
-        )
-    
-    if university_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is not assigned to any university"
-        )
-    
-    # Filter by document_id and ensure document belongs to user's university
-    chunks = (
-        db.query(models.MaterialChunk)
-        .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
-        .join(models.Subject, models.MaterialDocument.subject_id == models.Subject.id)
-        .join(models.Semester, models.Subject.semester_id == models.Semester.id)
-        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
-        .filter(
-            models.MaterialChunk.document_id == document_id,
-            models.Branch.university_id == university_id
-        )
-        .order_by(models.MaterialChunk.created_at.asc())
-        .all()
-    )
-    
-    return chunks
+# MaterialChunk endpoints removed - using Kendra for document search instead
 
 
 @router.post("/documents/upload", response_model=schemas.MaterialDocumentResponse)

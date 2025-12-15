@@ -15,23 +15,32 @@ import {
   masterDeleteUniversity,
   masterActivateUniversity,
   masterDeactivateUniversity,
-  masterCreateUniversityAdmin,
+  masterGetUniversityAdmins,
+  masterGetStudents,
   type University,
 } from '../api/client';
 import {
   Building2,
   Plus,
   Trash2,
-  UserPlus,
   Loader2,
   AlertCircle,
   CheckCircle2,
   X,
-  Power,
-  PowerOff,
-  Copy,
   Eye,
+  Search,
+  Menu,
+  Bell,
+  Settings,
+  Download,
+  Filter,
+  Ban,
+  CheckCircle,
+  GraduationCap,
+  Users,
+  TrendingUp,
 } from 'lucide-react';
+import MasterSidebar from '../components/MasterSidebar';
 
 // Helper function to extract error message from FastAPI error responses
 const extractErrorMessage = (err: any): string => {
@@ -68,6 +77,15 @@ const MasterUniversitiesPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'students' | 'created' | 'status'>('name');
+
+  // Stats
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [totalAdmins, setTotalAdmins] = useState(0);
 
   // Form states
   const [newUniversity, setNewUniversity] = useState({
@@ -78,11 +96,6 @@ const MasterUniversitiesPage = () => {
     country: '',
   });
 
-  // Create admin states
-  const [showCreateAdminForm, setShowCreateAdminForm] = useState<{ [key: number]: boolean }>({});
-  const [createAdminData, setCreateAdminData] = useState<{ [key: number]: { name: string; email: string; password: string } }>({});
-  const [creatingAdmin, setCreatingAdmin] = useState<number | null>(null);
-  const [createdAdminInfo, setCreatedAdminInfo] = useState<{ [key: number]: { email: string; password: string; universityName: string } }>({});
   const [togglingUniversity, setTogglingUniversity] = useState<number | null>(null);
 
   // Check master admin access
@@ -92,11 +105,12 @@ const MasterUniversitiesPage = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Load universities
+  // Load universities and stats
   useEffect(() => {
     if (user && user.role === 'master_admin') {
-          loadUniversities();
-        }
+      loadUniversities();
+      loadStats();
+    }
   }, [user]);
 
   const loadUniversities = async () => {
@@ -112,6 +126,19 @@ const MasterUniversitiesPage = () => {
     }
   };
 
+  const loadStats = async () => {
+    try {
+      const [admins, students] = await Promise.all([
+        masterGetUniversityAdmins(),
+        masterGetStudents(),
+      ]);
+      setTotalAdmins(admins.length);
+      setTotalStudents(students.length);
+    } catch (err) {
+      // Silently fail stats loading
+    }
+  };
+
   const handleCreateUniversity = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -119,16 +146,32 @@ const MasterUniversitiesPage = () => {
       setError(null);
       setSuccess(null);
 
-      const data: any = { name: newUniversity.name };
-      if (newUniversity.code) data.code = newUniversity.code;
-      if (newUniversity.city) data.city = newUniversity.city;
-      if (newUniversity.state) data.state = newUniversity.state;
-      if (newUniversity.country) data.country = newUniversity.country;
+      // Validate required fields
+      if (!newUniversity.name.trim()) {
+        setError('University name is required');
+        setIsLoading(false);
+        return;
+      }
+      if (!newUniversity.code.trim()) {
+        setError('University code is required');
+        setIsLoading(false);
+        return;
+      }
+
+      const data: any = { 
+        name: newUniversity.name.trim(),
+        code: newUniversity.code.trim()
+      };
+      if (newUniversity.city) data.city = newUniversity.city.trim();
+      if (newUniversity.state) data.state = newUniversity.state.trim();
+      if (newUniversity.country) data.country = newUniversity.country.trim();
 
       await masterCreateUniversity(data);
       setSuccess('University created successfully');
       setNewUniversity({ name: '', code: '', city: '', state: '', country: '' });
+      setShowCreateForm(false);
       await loadUniversities();
+      await loadStats();
     } catch (err: any) {
       setError(extractErrorMessage(err) || 'Failed to create university');
     } finally {
@@ -148,6 +191,7 @@ const MasterUniversitiesPage = () => {
       await masterDeleteUniversity(id);
       setSuccess('University deleted successfully');
       await loadUniversities();
+      await loadStats();
     } catch (err: any) {
       setError(extractErrorMessage(err) || 'Failed to delete university');
     } finally {
@@ -175,50 +219,54 @@ const MasterUniversitiesPage = () => {
     }
   };
 
-  const handleCreateAdmin = async (universityId: number) => {
-    const adminData = createAdminData[universityId];
-    if (!adminData || !adminData.name.trim() || !adminData.email.trim()) {
-      setError('Please fill in name and email');
-      return;
-    }
 
-    try {
-      setCreatingAdmin(universityId);
-      setError(null);
-      setSuccess(null);
-      // Backend generates password, so we send a dummy value
-      const response = await masterCreateUniversityAdmin(universityId, {
-        name: adminData.name.trim(),
-        email: adminData.email.trim(),
-        password: 'dummy', // Backend will generate its own password
-      });
-      
-      const university = universities.find(u => u.id === universityId);
-      // Use the password returned from backend
-      setCreatedAdminInfo({
-        ...createdAdminInfo,
-        [universityId]: {
-          email: adminData.email.trim(),
-          password: response.plain_password || 'Generated password',
-          universityName: university?.name || 'University',
-        },
-      });
-      
-      // Clear form and hide it
-      setCreateAdminData({ ...createAdminData, [universityId]: { name: '', email: '', password: 'dummy' } });
-      setShowCreateAdminForm({ ...showCreateAdminForm, [universityId]: false });
-    } catch (err: any) {
-      setError(extractErrorMessage(err) || 'Failed to create admin');
-    } finally {
-      setCreatingAdmin(null);
-    }
+  const getUniversityInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 3);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setSuccess('Copied to clipboard!');
-    setTimeout(() => setSuccess(null), 2000);
+  const getUniversityColor = (index: number) => {
+    const colors = [
+      'bg-blue-600',
+      'bg-red-600',
+      'bg-purple-600',
+      'bg-green-600',
+      'bg-orange-600',
+      'bg-cyan-600',
+    ];
+    return colors[index % colors.length];
   };
+
+  // Filter and sort universities
+  const filteredUniversities = universities
+    .filter(uni => {
+      const matchesSearch = uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (uni.code && uni.code.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesStatus = statusFilter === 'all' || 
+        (statusFilter === 'active' && uni.is_active) ||
+        (statusFilter === 'inactive' && !uni.is_active);
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'created':
+          return new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime();
+        case 'status':
+          return a.is_active === b.is_active ? 0 : a.is_active ? -1 : 1;
+        default:
+          return 0;
+      }
+    });
+
+  const activeUniversities = universities.filter(u => u.is_active).length;
+  const inactiveUniversities = universities.length - activeUniversities;
+  const activeRate = universities.length > 0 ? Math.round((activeUniversities / universities.length) * 100) : 0;
 
   if (authLoading || !user || user.role !== 'master_admin') {
     return (
@@ -229,427 +277,518 @@ const MasterUniversitiesPage = () => {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Building2 className="w-8 h-8 text-blue-600" />
-              Manage Universities
-            </h1>
-            <p className="mt-2 text-gray-600">Create and manage universities</p>
-          </div>
+    <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
+      {/* Sidebar */}
+      <MasterSidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        totalUniversities={universities.length}
+        totalStudents={totalStudents}
+        totalAdmins={totalAdmins}
+        actionButton={{
+          label: 'Add University',
+          onClick: () => setShowCreateForm(true),
+          icon: <Plus className="w-4 h-4" />,
+        }}
+        searchPlaceholder="Search universities..."
+      />
 
-          {/* Messages */}
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2 text-red-700">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>{error}</span>
-                </div>
-                <button
-                  onClick={() => setError(null)}
-                  className="text-red-500 hover:text-red-700 cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </motion.div>
-            )}
-            {success && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2 text-green-700">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span>{success}</span>
-                </div>
-                <button
-                  onClick={() => setSuccess(null)}
-                  className="text-green-500 hover:text-green-700"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Create University Form */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8"
-          >
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-blue-600" />
-              Create New University
-            </h2>
-            <form onSubmit={handleCreateUniversity} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newUniversity.name}
-                    onChange={(e) =>
-                      setNewUniversity({ ...newUniversity, name: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    placeholder="University Name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                  <input
-                    type="text"
-                    value={newUniversity.code}
-                    onChange={(e) =>
-                      setNewUniversity({ ...newUniversity, code: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    placeholder="University Code (optional)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input
-                    type="text"
-                    value={newUniversity.city}
-                    onChange={(e) =>
-                      setNewUniversity({ ...newUniversity, city: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    placeholder="City (optional)"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                  <input
-                    type="text"
-                    value={newUniversity.state}
-                    onChange={(e) =>
-                      setNewUniversity({ ...newUniversity, state: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    placeholder="State (optional)"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                  <input
-                    type="text"
-                    value={newUniversity.country}
-                    onChange={(e) =>
-                      setNewUniversity({ ...newUniversity, country: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                    placeholder="Country (optional)"
-                  />
-                </div>
-              </div>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
               <button
-                type="submit"
-                disabled={isLoading}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden text-gray-600 hover:text-gray-900"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4" />
-                    Create University
-                  </>
-                )}
+                <Menu className="w-6 h-6" />
               </button>
-            </form>
-          </motion.div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">University Management</h2>
+                <p className="text-sm text-gray-500">Add and manage universities on the platform</p>
+              </div>
+            </div>
 
-          {/* Universities List */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-          >
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">All Universities</h2>
-            {isLoading && universities.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              </div>
-            ) : universities.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                No universities found. Create one to get started.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {universities.map((uni) => (
-                  <motion.div
-                    key={uni.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+            <div className="flex items-center gap-4">
+              <button className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                <Settings className="w-5 h-5" />
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-all">
+                <Download className="w-4 h-4" />
+                <span>Export Data</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Wrapper */}
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="p-8">
+            {/* Messages */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2 text-red-700">
+                    <AlertCircle className="w-5 h-5" />
+                    <span>{error}</span>
+                  </div>
+                  <button
+                    onClick={() => setError(null)}
+                    className="text-red-500 hover:text-red-700 cursor-pointer"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-lg font-semibold text-gray-900">{uni.name}</h3>
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                              uni.is_active
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-700'
-                            }`}
-                          >
-                            {uni.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                        <div className="mt-1 text-sm text-gray-600 space-y-1">
-                          {uni.code && <div>Code: {uni.code}</div>}
-                          {(uni.city || uni.state || uni.country) && (
-                            <div>
-                              {[uni.city, uni.state, uni.country].filter(Boolean).join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleToggleUniversity(uni.id, uni.is_active)}
-                          disabled={togglingUniversity === uni.id || isLoading}
-                          className={`p-2 rounded-lg transition-colors disabled:opacity-50 cursor-pointer ${
-                            uni.is_active
-                              ? 'text-orange-600 hover:bg-orange-50'
-                              : 'text-green-600 hover:bg-green-50'
-                          }`}
-                          title={uni.is_active ? 'Deactivate University' : 'Activate University'}
-                        >
-                          {togglingUniversity === uni.id ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : uni.is_active ? (
-                            <PowerOff className="w-5 h-5" />
-                          ) : (
-                            <Power className="w-5 h-5" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUniversity(uni.id)}
-                          disabled={isLoading}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-                          title="Delete University"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
+                    <X className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              )}
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2 text-green-700">
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>{success}</span>
+                  </div>
+                  <button
+                    onClick={() => setSuccess(null)}
+                    className="text-green-500 hover:text-green-700"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Stats Section */}
+            <section className="mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                      <Building2 className="w-6 h-6 text-blue-600" />
                     </div>
-
-                    {/* Action Buttons */}
-                    <div className="mt-4 pt-4 border-t border-gray-200 flex items-center gap-2">
-                      <button
-                        onClick={() => navigate(`/master/universities/${uni.id}`)}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold cursor-pointer flex items-center gap-2"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View Details
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowCreateAdminForm({
-                            ...showCreateAdminForm,
-                            [uni.id]: !showCreateAdminForm[uni.id],
-                          });
-                          if (!createAdminData[uni.id]) {
-                            setCreateAdminData({
-                              ...createAdminData,
-                              [uni.id]: { name: '', email: '', password: 'dummy' },
-                            });
-                          }
-                        }}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold cursor-pointer flex items-center gap-2"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        Create Admin
-                      </button>
-                    </div>
-
-                    {/* Create Admin Form */}
-                    <AnimatePresence>
-                      {showCreateAdminForm[uni.id] && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="mt-4 pt-4 border-t border-gray-200"
-                        >
-                          <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                            Create University Admin for {uni.name}
-                          </h4>
-                          <div className="space-y-3">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Full Name
-                              </label>
-                              <input
-                                type="text"
-                                value={createAdminData[uni.id]?.name || ''}
-                                onChange={(e) =>
-                                  setCreateAdminData({
-                                    ...createAdminData,
-                                    [uni.id]: {
-                                      ...(createAdminData[uni.id] || { name: '', email: '', password: 'dummy' }),
-                                      name: e.target.value,
-                                    },
-                                  })
-                                }
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                placeholder="Admin Full Name"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Email
-                              </label>
-                              <input
-                                type="email"
-                                value={createAdminData[uni.id]?.email || ''}
-                                onChange={(e) =>
-                                  setCreateAdminData({
-                                    ...createAdminData,
-                                    [uni.id]: {
-                                      ...(createAdminData[uni.id] || { name: '', email: '', password: 'dummy' }),
-                                      email: e.target.value,
-                                    },
-                                  })
-                                }
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                                placeholder="admin@university.edu"
-                              />
-                            </div>
-                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-                              <strong>Note:</strong> A random <strong>8-character numeric</strong> password will be automatically generated for this admin.
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleCreateAdmin(uni.id)}
-                                disabled={creatingAdmin === uni.id}
-                                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
-                              >
-                                {creatingAdmin === uni.id ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Creating...
-                                  </>
-                                ) : (
-                                  'Create Admin'
-                                )}
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setShowCreateAdminForm({
-                                    ...showCreateAdminForm,
-                                    [uni.id]: false,
-                                  });
-                                  setCreateAdminData({
-                                    ...createAdminData,
-                                    [uni.id]: { name: '', email: '', password: 'dummy' },
-                                  });
-                                }}
-                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Created Admin Success Message */}
-                    <AnimatePresence>
-                      {createdAdminInfo[uni.id] && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-2 text-green-700 font-semibold">
-                              <CheckCircle2 className="w-5 h-5" />
-                              Admin created for {createdAdminInfo[uni.id].universityName}
-                            </div>
-                            <button
-                              onClick={() => {
-                                setCreatedAdminInfo({
-                                  ...createdAdminInfo,
-                                  [uni.id]: undefined as any,
-                                });
-                              }}
-                              className="text-green-500 hover:text-green-700 cursor-pointer"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex items-center justify-between bg-white p-2 rounded border border-green-200">
-                              <span className="text-gray-700 font-medium">Email:</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-900 font-mono">
-                                  {createdAdminInfo[uni.id].email}
-                                </span>
-                                <button
-                                  onClick={() => copyToClipboard(createdAdminInfo[uni.id].email)}
-                                  className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors cursor-pointer"
-                                  title="Copy email"
-                                >
-                                  <Copy className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between bg-white p-2 rounded border border-green-200">
-                              <span className="text-gray-700 font-medium">Password:</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-900 font-mono">
-                                  {createdAdminInfo[uni.id].password}
-                                </span>
-                                <button
-                                  onClick={() => copyToClipboard(createdAdminInfo[uni.id].password)}
-                                  className="p-1 text-green-600 hover:bg-green-100 rounded transition-colors cursor-pointer"
-                                  title="Copy password"
-                                >
-                                  <Copy className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-                      </motion.div>
+                    <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                      {activeUniversities} Active
+                    </span>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{universities.length}</h3>
+                  <p className="text-sm text-gray-600">Total Universities</p>
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">{activeUniversities} Active • {inactiveUniversities} Inactive</p>
+                  </div>
                 </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                      <GraduationCap className="w-6 h-6 text-green-600" />
+                    </div>
+                    <span className="text-xs font-semibold text-cyan-600 bg-cyan-50 px-2 py-1 rounded-full">
+                      {totalStudents > 0 ? `${(totalStudents / 1000).toFixed(1)}K` : '0'} Active
+                    </span>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">
+                    {totalStudents > 1000 ? `${(totalStudents / 1000).toFixed(1)}K` : totalStudents}
+                  </h3>
+                  <p className="text-sm text-gray-600">Total Students</p>
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">
+                      Avg: {universities.length > 0 ? Math.round(totalStudents / universities.length) : 0} per university
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+                      <Users className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                      {totalAdmins} Active
+                    </span>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{totalAdmins}</h3>
+                  <p className="text-sm text-gray-600">University Admins</p>
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">
+                      Avg: {universities.length > 0 ? (totalAdmins / universities.length).toFixed(1) : 0} per university
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
+                      {activeRate}%
+                    </span>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{activeRate}%</h3>
+                  <p className="text-sm text-gray-600">Active Rate</p>
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">Last 30 days activity</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Filters Section */}
+            <section className="mb-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search university name..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                    />
+                  </div>
+
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                  >
+                    <option value="name">Sort by: Name</option>
+                    <option value="created">Sort by: Created Date</option>
+                    <option value="status">Sort by: Status</option>
+                  </select>
+
+                  <div className="lg:col-span-2 flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setStatusFilter('all');
+                        setSortBy('name');
+                      }}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-all"
+                    >
+                      <Filter className="w-4 h-4" />
+                      <span>Reset Filters</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Universities Table Section */}
+            <section className="mb-8">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Universities List</h3>
+                    <p className="text-sm text-gray-500 mt-1">Manage all universities on the platform</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-all">
+                      <Download className="w-4 h-4" />
+                      <span>Export</span>
+                    </button>
+                    <button
+                      onClick={() => setShowCreateForm(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add University</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  {isLoading && universities.length === 0 ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                    </div>
+                  ) : filteredUniversities.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      {searchQuery || statusFilter !== 'all' ? 'No universities match your filters.' : 'No universities found. Create one to get started.'}
+                    </div>
+                  ) : (
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Logo
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            University Name
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Location
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Created
+                          </th>
+                          <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {filteredUniversities.map((uni, index) => (
+                          <tr key={uni.id} className="hover:bg-gray-50 transition-all">
+                            <td className="px-6 py-4">
+                              <div className={`w-12 h-12 ${getUniversityColor(index)} rounded-lg flex items-center justify-center text-white font-bold text-lg`}>
+                                {getUniversityInitials(uni.name)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div>
+                                <p className="font-semibold text-gray-900">{uni.name}</p>
+                                {uni.code && <p className="text-xs text-gray-500">{uni.code}</p>}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              {(uni.city || uni.state || uni.country) && (
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="w-4 h-4 text-gray-400" />
+                                  <span className="text-sm text-gray-700">
+                                    {[uni.city, uni.state, uni.country].filter(Boolean).join(', ') || 'N/A'}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-1 ${
+                                uni.is_active
+                                  ? 'bg-green-50 text-green-700'
+                                  : 'bg-red-50 text-red-700'
+                              } text-xs font-semibold rounded-full`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                  uni.is_active ? 'bg-green-500' : 'bg-red-500'
+                                }`}></span>
+                                {uni.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm text-gray-600">
+                                {uni.created_at ? new Date(uni.created_at).toLocaleDateString() : 'N/A'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => navigate(`/master/universities/${uni.id}`)}
+                                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                  title="View Details"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleToggleUniversity(uni.id, uni.is_active)}
+                                  disabled={togglingUniversity === uni.id}
+                                  className={`p-2 rounded-lg transition-all disabled:opacity-50 ${
+                                    uni.is_active
+                                      ? 'text-red-500 hover:text-red-600 hover:bg-red-50'
+                                      : 'text-green-500 hover:text-green-600 hover:bg-green-50'
+                                  }`}
+                                  title={uni.is_active ? 'Deactivate' : 'Activate'}
+                                >
+                                  {togglingUniversity === uni.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : uni.is_active ? (
+                                    <Ban className="w-4 h-4" />
+                                  ) : (
+                                    <CheckCircle className="w-4 h-4" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUniversity(uni.id)}
+                                  disabled={isLoading}
+                                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {filteredUniversities.length > 0 && (
+                  <div className="p-6 border-t border-gray-200 flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      Showing <span className="font-semibold text-gray-900">1-{filteredUniversities.length}</span> of{' '}
+                      <span className="font-semibold text-gray-900">{filteredUniversities.length}</span> universities
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6 text-sm text-gray-600">
+              <a href="#" className="hover:text-indigo-600 transition-all">Terms of Service</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Privacy Policy</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Help Center</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Contact Support</a>
+            </div>
+            <div className="text-sm text-gray-600">
+              © 2024 StudyTap AI. All rights reserved.
+            </div>
+          </div>
+        </footer>
+      </main>
+
+      {/* Create University Modal */}
+      <AnimatePresence>
+        {showCreateForm && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-50"
+              onClick={() => setShowCreateForm(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-white rounded-xl shadow-xl border border-gray-200 p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Add New University</h2>
+                  <button
+                    onClick={() => setShowCreateForm(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+                <form onSubmit={handleCreateUniversity} className="space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        University Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newUniversity.name}
+                        onChange={(e) => setNewUniversity({ ...newUniversity, name: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                        placeholder="e.g., Massachusetts Institute of Technology"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        University Code *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newUniversity.code}
+                        onChange={(e) => setNewUniversity({ ...newUniversity, code: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                        placeholder="e.g., MIT, HARVARD, STANFORD"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">Unique identifier code for the university</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                      <input
+                        type="text"
+                        value={newUniversity.city}
+                        onChange={(e) => setNewUniversity({ ...newUniversity, city: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                        placeholder="e.g., Cambridge"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                      <input
+                        type="text"
+                        value={newUniversity.state}
+                        onChange={(e) => setNewUniversity({ ...newUniversity, state: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                        placeholder="e.g., Massachusetts"
+                      />
+                    </div>
+                    <div className="lg:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+                      <input
+                        type="text"
+                        value={newUniversity.country}
+                        onChange={(e) => setNewUniversity({ ...newUniversity, country: e.target.value })}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                        placeholder="e.g., United States"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateForm(false)}
+                      className="px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4" />
+                          Add University
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

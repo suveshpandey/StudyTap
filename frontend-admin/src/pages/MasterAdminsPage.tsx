@@ -27,7 +27,11 @@ import {
   X,
   Power,
   PowerOff,
+  Menu,
+  Bell,
+  Settings,
 } from 'lucide-react';
+import MasterSidebar from '../components/MasterSidebar';
 
 // Helper function to extract error message from FastAPI error responses
 const extractErrorMessage = (err: any): string => {
@@ -60,6 +64,7 @@ const MasterAdminsPage = () => {
   const navigate = useNavigate();
 
   // State
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [universities, setUniversities] = useState<University[]>([]);
   const [universityAdmins, setUniversityAdmins] = useState<UniversityAdmin[]>([]);
   const [loadingAdmins, setLoadingAdmins] = useState(false);
@@ -153,8 +158,47 @@ const MasterAdminsPage = () => {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
+      {/* Sidebar */}
+      <MasterSidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        totalAdmins={universityAdmins.length}
+        searchPlaceholder="Search admins..."
+      />
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden text-gray-600 hover:text-gray-900"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">University Admins</h2>
+                <p className="text-sm text-gray-500">View and manage all university administrators</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                <Settings className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Wrapper */}
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -292,7 +336,24 @@ const MasterAdminsPage = () => {
             )}
           </motion.div>
         </motion.div>
-      </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6 text-sm text-gray-600">
+              <a href="#" className="hover:text-indigo-600 transition-all">Terms of Service</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Privacy Policy</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Help Center</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Contact Support</a>
+            </div>
+            <div className="text-sm text-gray-600">
+              © 2024 StudyTap AI. All rights reserved.
+            </div>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 };

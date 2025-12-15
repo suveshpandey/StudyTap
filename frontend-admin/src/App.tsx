@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import MasterDashboardPage from './pages/MasterDashboardPage';
 import MasterUniversitiesPage from './pages/MasterUniversitiesPage';
 import MasterAdminsPage from './pages/MasterAdminsPage';
 import MasterStudentsPage from './pages/MasterStudentsPage';
@@ -17,11 +18,10 @@ import MasterUniversityDetailsPage from './pages/MasterUniversityDetailsPage';
 import MasterAdminProfilePage from './pages/MasterAdminProfilePage';
 import AdminAcademicsPage from './pages/AdminAcademicsPage';
 import AdminStudentsPage from './pages/AdminStudentsPage';
-import AdminSubjectsPage from './pages/AdminSubjectsPage';
 import AdminMaterialsPage from './pages/AdminMaterialsPage';
 import UniversityDetailsPage from './pages/UniversityDetailsPage';
 import UniversityAdminProfilePage from './pages/UniversityAdminProfilePage';
-import Navbar from './components/Navbar';
+import UniversityAdminDashboard from './pages/UniversityAdminDashboard';
 import { AnimatePresence } from 'framer-motion';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
@@ -51,7 +51,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode;
 const AppRoutes = () => {
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       <AnimatePresence mode="wait">
         <Routes>
           {/* Public Routes */}
@@ -60,6 +60,14 @@ const AppRoutes = () => {
           <Route path="/signup" element={<SignupPage />} />
           
           {/* Master Admin Routes */}
+          <Route
+            path="/master/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['master_admin']}>
+                <MasterDashboardPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/master/universities"
             element={
@@ -103,6 +111,14 @@ const AppRoutes = () => {
           
           {/* University Admin Routes */}
           <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['university_admin']}>
+                <UniversityAdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/academics"
             element={
               <ProtectedRoute allowedRoles={['university_admin']}>
@@ -120,11 +136,7 @@ const AppRoutes = () => {
           />
           <Route
             path="/admin/subjects"
-            element={
-              <ProtectedRoute allowedRoles={['university_admin']}>
-                <AdminSubjectsPage />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/admin/academics" replace />}
           />
           <Route
             path="/admin/materials"

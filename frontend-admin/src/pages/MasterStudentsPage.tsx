@@ -27,7 +27,12 @@ import {
   X,
   Power,
   PowerOff,
+  Menu,
+  Bell,
+  Settings,
+  Search,
 } from 'lucide-react';
+import MasterSidebar from '../components/MasterSidebar';
 
 // Helper function to extract error message from FastAPI error responses
 const extractErrorMessage = (err: any): string => {
@@ -60,6 +65,7 @@ const MasterStudentsPage = () => {
   const navigate = useNavigate();
 
   // State
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [universities, setUniversities] = useState<University[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
@@ -70,6 +76,7 @@ const MasterStudentsPage = () => {
   
   // Filter state for students
   const [selectedUniversityFilter, setSelectedUniversityFilter] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Check master admin access
   useEffect(() => {
@@ -162,8 +169,47 @@ const MasterStudentsPage = () => {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex h-screen overflow-hidden bg-gray-50 font-sans">
+      {/* Sidebar */}
+      <MasterSidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        totalStudents={students.length}
+        searchPlaceholder="Search students..."
+      />
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-8 py-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden text-gray-600 hover:text-gray-900"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Students</h2>
+                <p className="text-sm text-gray-500">View and manage all students across universities</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <button className="relative p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+              <button className="p-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-all">
+                <Settings className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Wrapper */}
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="p-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -226,9 +272,20 @@ const MasterStudentsPage = () => {
             transition={{ duration: 0.3 }}
             className="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
               <h2 className="text-xl font-semibold text-gray-900">Students</h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Search Bar */}
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                  />
+                </div>
                 <label htmlFor="universityFilter" className="text-sm font-medium text-gray-700">
                   Filter by University:
                 </label>
@@ -257,7 +314,21 @@ const MasterStudentsPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {students.map((student) => {
+                {students
+                  .filter((student) => {
+                    // Apply search filter
+                    if (searchQuery.trim()) {
+                      const query = searchQuery.toLowerCase();
+                      if (
+                        !student.name.toLowerCase().includes(query) &&
+                        !student.email.toLowerCase().includes(query)
+                      ) {
+                        return false;
+                      }
+                    }
+                    return true;
+                  })
+                  .map((student) => {
                   const university = universities.find(u => u.id === student.university_id);
                   return (
                     <motion.div
@@ -321,7 +392,24 @@ const MasterStudentsPage = () => {
             )}
           </motion.div>
         </motion.div>
-      </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6 text-sm text-gray-600">
+              <a href="#" className="hover:text-indigo-600 transition-all">Terms of Service</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Privacy Policy</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Help Center</a>
+              <a href="#" className="hover:text-indigo-600 transition-all">Contact Support</a>
+            </div>
+            <div className="text-sm text-gray-600">
+              © 2024 StudyTap AI. All rights reserved.
+            </div>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 };

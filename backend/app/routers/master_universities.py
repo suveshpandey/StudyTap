@@ -7,10 +7,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, date
 import random
 import string
 from app.database import get_db
@@ -142,7 +142,7 @@ def delete_university(
 @router.post("/universities/{university_id}/create-admin", response_model=schemas.UniversityAdminCreateResponse)
 def create_university_admin(
     university_id: int,
-    admin_data: schemas.UserSignup,
+    admin_data: schemas.UniversityAdminCreate,
     current_user: models.MasterAdmin = Depends(get_current_master_admin),
     db: Session = Depends(get_db),
 ):
@@ -390,6 +390,8 @@ class UniversityAnalyticsResponse(BaseModel):
     total_university_admins: int
     active_university_admins: int
     inactive_university_admins: int
+    total_documents: int
+    questions_per_month: int
 
     class Config:
         from_attributes = True
@@ -457,6 +459,36 @@ def get_university_analytics(
     
     inactive_university_admins = total_university_admins - active_university_admins
     
+    # Get total documents count for this university
+    # Documents are linked to subjects, which are linked to semesters, which are linked to branches
+    # Using the same join pattern as in materials.py router
+    total_documents_query = (
+        db.query(func.count(models.MaterialDocument.id))
+        .join(models.Subject, models.MaterialDocument.subject_id == models.Subject.id)
+        .join(models.Semester, models.Subject.semester_id == models.Semester.id)
+        .join(models.Branch, models.Semester.branch_id == models.Branch.id)
+        .filter(models.Branch.university_id == university_id)
+    )
+    total_documents = total_documents_query.scalar() or 0
+    
+    # Get questions count for current month
+    # Questions are USER messages in ChatMessage, linked to Chat, linked to Student
+    current_date = date.today()
+    current_month = current_date.month
+    current_year = current_date.year
+    
+    # Count USER messages from current month for students of this university
+    questions_per_month = db.query(func.count(models.ChatMessage.id)).join(
+        models.Chat, models.ChatMessage.chat_id == models.Chat.id
+    ).join(
+        models.Student, models.Chat.student_id == models.Student.id
+    ).filter(
+        models.Student.university_id == university_id,
+        models.ChatMessage.sender == 'USER',
+        extract('month', models.ChatMessage.created_at) == current_month,
+        extract('year', models.ChatMessage.created_at) == current_year
+    ).scalar() or 0
+    
     return {
         "id": university.id,
         "name": university.name,
@@ -475,4 +507,37 @@ def get_university_analytics(
         "total_university_admins": total_university_admins,
         "active_university_admins": active_university_admins,
         "inactive_university_admins": inactive_university_admins,
+        "total_documents": total_documents,
+        "questions_per_month": questions_per_month,
     }
+
+
+# ============================================================================
+# BRANCH MANAGEMENT
+# ============================================================================
+
+# Get branches for a specific university (master admin only)
+@router.get("/universities/{university_id}/branches", response_model=List[schemas.BranchResponse])
+def get_university_branches(
+    university_id: int,
+    current_user: models.MasterAdmin = Depends(get_current_master_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all branches for a specific university.
+    Master admin only.
+    """
+    # Verify university exists
+    university = db.query(models.University).filter(models.University.id == university_id).first()
+    if not university:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="University not found",
+        )
+    
+    # Get all branches for this university
+    branches = db.query(models.Branch).filter(
+        models.Branch.university_id == university_id
+    ).order_by(models.Branch.name.asc()).all()
+    
+    return branches

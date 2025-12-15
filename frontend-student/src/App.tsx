@@ -9,11 +9,10 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
-import SelectSubjectPage from './pages/SelectSubjectPage';
+import Dashboard from './pages/Dashboard';
 import ChatListPage from './pages/ChatListPage';
 import ChatPage from './pages/ChatPage';
 import StudentProfilePage from './pages/StudentProfilePage';
-import Navbar from './components/Navbar';
 import { AnimatePresence } from 'framer-motion';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -34,18 +33,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
-            path="/dashboard"
+            path="/home"
             element={
               <ProtectedRoute>
-                <SelectSubjectPage />
+                <Dashboard />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/dashboard"
+            element={<Navigate to="/home" replace />}
           />
           <Route
             path="/chats"

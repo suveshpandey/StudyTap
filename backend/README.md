@@ -187,7 +187,7 @@ The API will be available at:
 - `GET /courses/subjects?semester_id={id}` - Get subjects for a semester
 
 ### Chat
-- `POST /chat/start` - Start a new chat session (subject-specific or branch-wide)
+- `POST /chat/start` - Start a new chat session (subject-specific or branch chat)
 - `GET /chat` - List user's chats
 - `GET /chat/{chat_id}/messages` - Get messages for a chat
 - `POST /chat/{chat_id}/message` - Send a message and get AI response
@@ -253,7 +253,7 @@ The API will be available at:
 
 ### Material Tables
 - **materials_documents** - PDF documents stored in S3
-- **materials_chunks** - Text chunks extracted from documents (legacy, now using Kendra)
+- **materials_chunks** - Removed (using AWS Kendra for document search)
 
 ## Features
 
@@ -275,7 +275,7 @@ The API will be available at:
 
 ### 4. Chat System
 - **Subject-Specific Chats**: Students can chat about specific subjects
-- **Branch-Wide Chats**: Students can chat across all materials in their branch
+- **Branch Chats**: Students can chat across all materials in their branch
 - **Message History**: Persistent chat history
 - **Smart Filtering**: Kendra filters results by university and subject/branch
 

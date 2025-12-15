@@ -2,7 +2,7 @@
 # File: models.py
 # Company: Euron (A Subsidiary of EngageSphere Technology Private Limited)
 # Created On: 01-12-2025
-# Description: SQLAlchemy database models for University, Branch, Semester, Subject, Chat, ChatMessage, MaterialDocument, MaterialChunk, MasterAdmin, UniversityAdmin, and Student
+# Description: SQLAlchemy database models for University, Branch, Semester, Subject, Chat, ChatMessage, MaterialDocument, MasterAdmin, UniversityAdmin, and Student
 # -----------------------------------------------------------------------------
 
 from sqlalchemy import Column, Integer, String, ForeignKey, Text, Enum, TIMESTAMP, SmallInteger, DateTime, Boolean
@@ -112,25 +112,7 @@ class MaterialDocument(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     subject = relationship("Subject", back_populates="materials")
-    chunks = relationship(
-        "MaterialChunk",
-        back_populates="document",
-        cascade="all, delete-orphan",
-    )
-
-
-class MaterialChunk(Base):
-    __tablename__ = "materials_chunks"
-
-    id = Column(Integer, primary_key=True, index=True)
-    document_id = Column(Integer, ForeignKey("materials_documents.id"), nullable=False)
-    page_number = Column(Integer, nullable=True)
-    heading = Column(String(255), nullable=True)
-    keywords = Column(String(255), nullable=False)  # comma-separated keywords
-    text = Column(Text, nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-
-    document = relationship("MaterialDocument", back_populates="chunks")
+    # MaterialChunk relationship removed - using Kendra instead
 
 
 class MasterAdmin(Base):

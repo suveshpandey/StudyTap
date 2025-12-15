@@ -7,12 +7,19 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
+from datetime import date
 from app.database import get_db
 from app import models, schemas
 from app.deps import get_current_student
 from app.auth import verify_password, get_password_hash
+from pydantic import BaseModel
 
 router = APIRouter()
+
+
+class QuestionsTodayResponse(BaseModel):
+    questions_today: int
 
 
 @router.get("/profile", response_model=schemas.StudentResponse)
@@ -63,6 +70,27 @@ def update_student_profile(
     db.refresh(student)
     
     return student
+
+
+@router.get("/questions-today", response_model=QuestionsTodayResponse)
+def get_questions_today(
+    current_user: models.Student = Depends(get_current_student),
+    db: Session = Depends(get_db)
+):
+    """Get the count of questions asked by the student today."""
+    today = date.today()
+    
+    # Count USER messages from today for this student
+    # Filter by student's chats and messages sent today
+    questions_today = db.query(func.count(models.ChatMessage.id)).join(
+        models.Chat, models.ChatMessage.chat_id == models.Chat.id
+    ).filter(
+        models.Chat.student_id == current_user.id,
+        models.ChatMessage.sender == 'USER',
+        func.date(models.ChatMessage.created_at) == today
+    ).scalar() or 0
+    
+    return {"questions_today": questions_today}
 
 
 @router.post("/change-password")

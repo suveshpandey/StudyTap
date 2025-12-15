@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app import models, schemas
@@ -62,7 +62,7 @@ async def start_chat(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You are not assigned to any branch. Please contact your administrator."
             )
-        subject_name = "Branch-wide Chat"
+        subject_name = "Branch Chat"
 
     # Always start with a generic title; first user question will override it
     new_chat = models.Chat(
@@ -110,7 +110,7 @@ async def get_chats(
             subject_name = subject.name if subject else None
         else:
             # Branch-level chat
-            subject_name = "Branch-wide Chat"
+            subject_name = "Branch Chat"
         
         results.append(
             schemas.ChatOut(
@@ -230,7 +230,7 @@ async def send_message(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Branch not found or does not belong to your university."
             )
-        subject_name = "Branch-wide Chat"
+        subject_name = "Branch Chat"
     
     # --- RAG: Query AWS Kendra for relevant chunks from S3 ---
     context_text = ""
@@ -301,68 +301,11 @@ async def send_message(
                     
                     sources.append(source_obj)
         except Exception as e:
-            # Log error but continue with fallback
+            # Log error
             print(f"Error querying Kendra: {str(e)}")
-            # Fallback to database chunks if Kendra fails
             kendra_results = []
     
-    # Fallback: Use database chunks if Kendra is not enabled or failed
-    if not kendra_results and not context_text:
-        question_lower = message_data.question.lower()
-        question_words = [w.strip() for w in question_lower.split() if len(w.strip()) > 2]
-        
-        chunks = []
-        if subject:
-            # Subject-specific fallback
-            chunks = (
-                db.query(models.MaterialChunk)
-                .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
-                .filter(models.MaterialDocument.subject_id == subject.id)
-                .options(joinedload(models.MaterialChunk.document))
-                .all()
-            )
-        elif branch:
-            # Branch-level fallback: get chunks from all subjects in the branch
-            chunks = (
-                db.query(models.MaterialChunk)
-                .join(models.MaterialDocument, models.MaterialChunk.document_id == models.MaterialDocument.id)
-                .join(models.Subject, models.MaterialDocument.subject_id == models.Subject.id)
-                .join(models.Semester, models.Subject.semester_id == models.Semester.id)
-                .filter(models.Semester.branch_id == branch.id)
-                .options(joinedload(models.MaterialChunk.document))
-                .all()
-            )
-        
-        relevant_chunks = []
-        # Try keyword-based matching
-        for chunk in chunks:
-            if chunk.keywords:
-                keywords = [k.strip().lower() for k in chunk.keywords.split(",") if k.strip()]
-                keyword_match = any(kw and (kw in question_lower or any(qw in kw for qw in question_words)) for kw in keywords)
-                if keyword_match:
-                    relevant_chunks.append(chunk)
-                    if len(relevant_chunks) >= 5:
-                        break
-        
-        # Fallback: use first few chunks if no keyword matches
-        if not relevant_chunks and chunks:
-            relevant_chunks = chunks[:3]
-        
-        if relevant_chunks:
-            context_text = "Reference material:\n"
-            for chunk in relevant_chunks:
-                doc = chunk.document
-                context_text += f"Title: {doc.title}\n"
-                if chunk.page_number:
-                    context_text += f"Page: {chunk.page_number}\n"
-                if chunk.heading:
-                    context_text += f"Heading: {chunk.heading}\n"
-                context_text += f"Content: {chunk.text}\n\n"
-                sources.append({
-                    "type": "snippet",
-                    "title": doc.title,
-                    "page": chunk.page_number
-                })
+    # Note: Database chunks fallback removed - using Kendra only
     
     system_prompt = f"""
 You are a helpful AI tutor for a university student.

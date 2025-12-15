@@ -196,6 +196,7 @@ export type Student = {
   is_active: boolean;
   name: string;
   email: string;
+  created_at: string;
 };
 
 export type StudentBulkCreateResponse = {
@@ -475,6 +476,11 @@ export const updateStudentProfile = async (data: { name?: string; email?: string
 
 export const changeStudentPassword = async (data: { current_password: string; new_password: string }): Promise<{ message: string }> => {
   const res = await apiClient.post<{ message: string }>('/student/change-password', data);
+  return res.data;
+};
+
+export const getQuestionsToday = async (): Promise<{ questions_today: number }> => {
+  const res = await apiClient.get<{ questions_today: number }>('/student/questions-today');
   return res.data;
 };
 
