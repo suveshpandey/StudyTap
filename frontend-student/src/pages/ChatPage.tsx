@@ -14,6 +14,7 @@ import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css';
 import { getChatMessages, sendChatMessage, getChats } from '../api/client';
 import type { ChatMessage, Chat } from '../api/client';
+import DiagramDisplay from '../components/DiagramDisplay';
 import { useAuth } from '../hooks/useAuth';
 import {
   MessageSquare,
@@ -211,6 +212,7 @@ const ChatPage = () => {
           sender: 'BOT',
           message: res.answer,
           sources: res.sources,
+          diagrams: res.diagrams,
           created_at: new Date().toISOString(),
         },
       ]);
@@ -821,6 +823,11 @@ const ChatPage = () => {
                                       {message.message}
                                     </ReactMarkdown>
                                   </div>
+
+                                  {/* Display diagrams if available */}
+                                  {message.diagrams && message.diagrams.length > 0 && (
+                                    <DiagramDisplay diagrams={message.diagrams} />
+                                  )}
 
                                   {hasSources && (
                                     <div className="mt-4 pt-4 border-t border-gray-200">

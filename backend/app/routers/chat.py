@@ -7,12 +7,17 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Tuple, Set
 from app.database import get_db
 from app import models, schemas
 from app.deps import get_current_user, get_current_student
 from app.gemini_client import get_gemini_response
 from app.kendra_client import query_kendra, format_kendra_results_for_gemini, KENDRA_ENABLED
+from app.diagram_utils import (
+    extract_pdf_uuid_from_s3_key,
+    get_diagrams_for_pages,
+    generate_diagram_presigned_urls
+)
 
 router = APIRouter()
 
@@ -393,20 +398,100 @@ Explain briefly, and mention that this answer is based on general knowledge, not
     if not has_insufficient_info:
         final_sources = sources
     
-    # Insert bot message
+    # --- DIAGRAM RENDERING: Extract diagrams for pages used in answer ---
+    diagrams = []
+    print(f"[Diagram Debug] Starting diagram extraction - kendra_results: {len(kendra_results) if kendra_results else 0}, has_insufficient_info: {has_insufficient_info}")
+    if kendra_results and not has_insufficient_info:
+        try:
+            # Collect unique (pdf_uuid, page_number) pairs from Kendra results
+            page_pairs: List[Tuple[str, int]] = []
+            seen_pairs: Set[Tuple[str, int]] = set()
+            
+            print(f"[Diagram Debug] Processing {len(kendra_results)} Kendra results for diagrams")
+            for result in kendra_results:
+                s3_key = result.get("s3_key", "")
+                page_number = result.get("page_number")
+                document_uri = result.get("document_uri", "")
+                
+                # If s3_key is empty, try to extract from document_uri
+                if not s3_key and document_uri:
+                    # Extract key from URI
+                    if "s3://" in document_uri:
+                        parts = document_uri.split("/", 3)
+                        if len(parts) >= 4:
+                            s3_key = parts[3]
+                    elif ".amazonaws.com" in document_uri:
+                        # Extract from HTTPS URL
+                        try:
+                            from urllib.parse import urlparse
+                            parsed = urlparse(document_uri)
+                            s3_key = parsed.path.lstrip("/")
+                        except Exception:
+                            if ".amazonaws.com" in document_uri:
+                                parts = document_uri.split(".amazonaws.com/", 1)
+                                if len(parts) == 2:
+                                    s3_key = parts[1]
+                
+                if not s3_key or page_number is None:
+                    print(f"[Diagram Debug] Skipping result - s3_key: {bool(s3_key)}, page_number: {page_number}")
+                    continue
+                
+                # Extract pdf_uuid from S3 key
+                pdf_uuid = extract_pdf_uuid_from_s3_key(s3_key)
+                if not pdf_uuid:
+                    print(f"[Diagram Debug] Failed to extract pdf_uuid from s3_key: {s3_key}")
+                    continue
+                
+                # Convert page_number to int if it's a string
+                try:
+                    page_num = int(page_number) if isinstance(page_number, (str, float)) else page_number
+                except (ValueError, TypeError) as e:
+                    print(f"[Diagram Debug] Failed to convert page_number {page_number}: {e}")
+                    continue
+                
+                # Deduplicate pairs
+                pair = (pdf_uuid, page_num)
+                if pair not in seen_pairs:
+                    seen_pairs.add(pair)
+                    page_pairs.append(pair)
+                    print(f"[Diagram Debug] Added page pair: pdf_uuid={pdf_uuid}, page={page_num}")
+            
+            print(f"[Diagram Debug] Collected {len(page_pairs)} unique page pairs")
+            # Get diagrams for these pages
+            if page_pairs:
+                print(f"[Diagram Debug] Fetching diagrams for {len(page_pairs)} page pairs")
+                diagrams_dict = get_diagrams_for_pages(page_pairs)
+                print(f"[Diagram Debug] Got diagrams_dict with {len(diagrams_dict)} PDFs")
+                diagrams = generate_diagram_presigned_urls(diagrams_dict)
+                print(f"[Diagram Debug] Generated {len(diagrams)} presigned URLs")
+            else:
+                print(f"[Diagram Debug] No page pairs collected, skipping diagram fetch")
+        except Exception as e:
+            # Log error but don't fail the request - diagrams are optional
+            import traceback
+            print(f"Error fetching diagrams: {e}")
+            print(f"Traceback: {traceback.format_exc()}")
+            diagrams = []
+    
+    # Insert bot message with diagrams
+    print(f"[Diagram Debug] Saving bot message with {len(diagrams) if diagrams else 0} diagrams")
     bot_message = models.ChatMessage(
         chat_id=chat_id,
         sender="BOT",
         message=answer_text,
-        sources=final_sources if final_sources else None
+        sources=final_sources if final_sources else None,
+        diagrams=diagrams if diagrams else None
     )
     db.add(bot_message)
     db.commit()
     db.refresh(bot_message)
     
-    # Return response with answer, sources, and updated title if applicable
+    print(f"[Diagram Debug] Bot message saved with ID: {bot_message.id}, diagrams: {bot_message.diagrams}")
+    
+    # Return response with answer, sources, diagrams, and updated title if applicable
     return {
         "answer": answer_text,
         "sources": final_sources,
+        "diagrams": diagrams,
         "chat_title": updated_title
     }

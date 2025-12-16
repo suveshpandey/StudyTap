@@ -175,7 +175,7 @@ const LoginPage = () => {
 
             {/* Social Login Section */}
             <div className="mb-6">
-              <button 
+              <button
                 type="button"
                 className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all mb-3"
               >
@@ -188,7 +188,7 @@ const LoginPage = () => {
                 <span>Continue with Google</span>
               </button>
 
-              <button 
+              <button
                 type="button"
                 className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
               >
@@ -210,18 +210,18 @@ const LoginPage = () => {
               <div className="relative flex justify-center text-sm">
                 <span className="px-4 bg-white text-gray-500 font-medium">Or continue with email</span>
               </div>
-            </div>
+          </div>
 
             {/* Error Message */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
                 className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm"
-              >
-                {error}
-              </motion.div>
-            )}
+            >
+              {error}
+            </motion.div>
+          )}
 
             {/* Login Form */}
             <form onSubmit={handleSubmit}>
@@ -303,7 +303,7 @@ const LoginPage = () => {
                 )}
               </button>
             </form>
-          </motion.div>
+        </motion.div>
 
           {/* Features Section */}
           <div className="mt-8 grid grid-cols-3 gap-4 text-center">

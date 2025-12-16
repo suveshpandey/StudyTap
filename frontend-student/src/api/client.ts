@@ -51,12 +51,19 @@ export type Chat = {
   created_at: string;
 };
 
+export type Diagram = {
+  pdf_uuid: string;
+  page: number;
+  url: string;
+};
+
 export type ChatMessage = {
   id?: number;
   sender: 'USER' | 'BOT';
   message: string;
   created_at?: string;
   sources?: { title: string; page: number }[];
+  diagrams?: Diagram[];
 };
 
 // Chat API functions
@@ -81,8 +88,8 @@ export const getChatMessages = async (chatId: number): Promise<ChatMessage[]> =>
 export const sendChatMessage = async (
   chatId: number,
   question: string
-): Promise<{ answer: string; sources: any[] }> => {
-  const response = await apiClient.post<{ answer: string; sources: any[] }>(
+): Promise<{ answer: string; sources: any[]; diagrams: Diagram[] }> => {
+  const response = await apiClient.post<{ answer: string; sources: any[]; diagrams: Diagram[] }>(
     `/chat/${chatId}/message`,
     { question }
   );

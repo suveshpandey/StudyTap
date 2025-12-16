@@ -142,6 +142,7 @@ class ChatMessageOut(BaseModel):
     message: str
     created_at: datetime
     sources: Optional[List[Dict[str, Any]]] = None
+    diagrams: Optional[List[Dict[str, Any]]] = None
 
     class Config:
         from_attributes = True
@@ -166,6 +167,7 @@ class ChatMessageCreate(BaseModel):
 class ChatMessageReply(BaseModel):
     answer: str
     sources: List[Dict[str, Any]] = []
+    diagrams: List[Dict[str, Any]] = []  # List of diagrams with pdf_uuid, page, and url
     chat_title: Optional[str] = None  # Updated chat title if it was auto-titled
 
 

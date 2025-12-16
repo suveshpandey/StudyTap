@@ -92,6 +92,7 @@ class ChatMessage(Base):
     sender = Column(String(10), nullable=False)  # 'USER' or 'BOT'
     message = Column(Text, nullable=False)
     sources = Column(JSON, nullable=True)
+    diagrams = Column(JSON, nullable=True)  # Store diagram URLs and metadata
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     chat = relationship("Chat", back_populates="messages")
